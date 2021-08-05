@@ -1,0 +1,2 @@
+# FactorioModCalculator
+Factorio Mod Calculator
