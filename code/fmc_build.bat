@@ -1,0 +1,1 @@
+pyinstaller.exe  --clean --onefile main_window.py
