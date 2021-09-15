@@ -44,9 +44,9 @@ class EditWidgetRapper(QGridLayout):
         
         tab_widget = QTabWidget()
         self.edit_widget = EditWidget(bCreateTab = self.bCreateTab)
-        self.widget_gt = group_tree.GroupTreeWidget(self.edit_widget, bCreateTab = self.bCreateTab)
-        self.edit_widget.widget_gt = self.widget_gt
-        tab_widget.addTab(self.widget_gt, 'Tree view')
+        self.tree_widget = group_tree.GroupTreeWidget(self.edit_widget, bCreateTab = self.bCreateTab)
+        self.edit_widget.tree_widget = self.tree_widget
+        tab_widget.addTab(self.tree_widget, 'Tree view')
         
         self.addWidget(tab_widget, 0, 0, 2, 1)
         self.addWidget(self.bt_hide, 0, 2)
@@ -65,7 +65,7 @@ class EditWidget(QWidget):
     def __init__(self, bCreateTab = False):
         super().__init__()
         self.elem = None
-        self.widget_gt = None
+        self.tree_widget = None
         self.bCreateTab = bCreateTab
         self.initUI()
         
@@ -201,7 +201,7 @@ class EditWidget(QWidget):
         self.grid_module.resetInfo()
         self.setEnabled(False)
         
-    def setInfoEW(self, elem, bUpdateGroupTree = False):
+    def setElem(self, elem, bUpdateGroupTree = False):
         self.elem = elem
         
         #공용
@@ -218,8 +218,8 @@ class EditWidget(QWidget):
             group = group.group
         self.label_total.setText(common_func.getAmountRound(num_fac_total))
         
-        self.grid_icon.setInfoGI(elem)
-        self.grid_link.setInfoGL(elem)
+        self.grid_icon.setInfoGridIcon(elem)
+        self.grid_link.setInfoGridLink(elem)
         
         #그룹 전용
         if type(elem) != elem_manager.ElemFactory:
@@ -233,28 +233,34 @@ class EditWidget(QWidget):
             self.edit_goal.setText(common_func.getAmountRound(num_goal, 5))
             self.setEnabled(True)
             self.edit_beacon.setText(str(elem.beacon))
-            self.grid_module.setInfoGM(elem)
+            self.grid_module.setInfoGridModule(elem)
             
         if bUpdateGroupTree:
-            self.widget_gt.setInfoGT(elem)
+            self.tree_widget.updateTree()
+            self.setElem(elem)
+            self.tree_widget.setCurrentSelect(elem)
             
     def onNameChanged(self):
+        if self.elem is None:
+            return
         self.elem.name = self.edit_name.text()
         if self.elem.name is None or self.elem.name == '':
             self.elem.name \
                 = str(type(self.elem).__name__)[4:] + ' ' + str(self.elem.id)
             self.edit_name.setText(self.elem.name)
-        self.widget_gt.setInfoGT(self.elem)
         
     def onGoalChanged(self):
+        if self.elem is None:
+            return
         time = config_manager.time_set[config_manager.time_config]
         goal_tmp = float(self.edit_goal.text())
         goal = goal_tmp / time
         self.elem.changeGoal(goal)
-        self.setInfoEW(self.elem, bUpdateGroupTree=True)
-        self.widget_gt.setInfoGT(self.elem.group)
+        self.setElem(self.elem, bUpdateGroupTree=True)
         
     def onFacNumChanged(self):
+        if self.elem is None:
+            return
         if isinstance(self.elem, elem_manager.ElemGroup):
             facNum = float(self.edit_factories.text())
             self.elem.changeFacNum(facNum)
@@ -264,12 +270,11 @@ class EditWidget(QWidget):
             facNum = float(self.edit_factories.text())
             goal = facNum * self.elem.num_goal / self.elem.num_factory 
             self.elem.changeGoal(goal)
-        self.setInfoEW(self.elem, bUpdateGroupTree=True)
-        self.widget_gt.setInfoGT(self.elem.group)
+        self.setElem(self.elem, bUpdateGroupTree=True)
         
 class GridModule(QGridLayout):
     def __init__(self, parent):
-        self.widget_parent = parent
+        self.edit_widget = parent
         super().__init__()
         self.list_bt = []
         self.initUI()
@@ -309,7 +314,7 @@ class GridModule(QGridLayout):
             self.grid_btn.itemAt(i).widget().setParent(None)
             #self.grid_btn.itemAt(i).widget().deleteLater()
         
-    def setInfoGM(self, elem):
+    def setInfoGridModule(self, elem):
         self.list_module = [['None', '_None']]
         list_module_from_recipe = item_manager.getModuleListWithRecipe(elem.recipe.name)
         for module in list_module_from_recipe :
@@ -365,7 +370,7 @@ class GridLink(QGridLayout):
     def __init__(self, parent):
         super().__init__()
         
-        self.widget_parent = parent
+        self.edit_widget = parent
         self.bProduct = True
         self.selected = None
         self.elem = None
@@ -417,7 +422,7 @@ class GridLink(QGridLayout):
         self.bt_item.setIcon(QIcon())
         self.bt_item.setToolTip('')
         
-    def setInfoGL(self, elem):
+    def setInfoGridLink(self, elem):
         self.elem = elem
         list_product = list(elem.map_product.values())
         name_item = None
@@ -535,10 +540,7 @@ class GridLink(QGridLayout):
         #TODO : 작성중
         
         # UI 업데이트
-        #self.widget_parent.setInfoEW(self.elem, True)
-        self.widget_parent.setInfoEW(self.elem)
-        
-        #print(item.name, id, ratio)
+        self.edit_widget.setElem(self.elem)
         
     def onDelLink(self):
         pass

@@ -27,6 +27,10 @@ def getCommonPath(name):
         path = os.path.join(template_manager.getTemplateDir(), template_manager.name_clock)
     elif name == 'factorio':
         path = os.path.join(template_manager.getTemplateDir(), template_manager.name_fac_icon)
+    elif name == 'factory':
+        path = os.path.join(template_manager.getTemplateDir(), \
+            'graphics','icons', \
+            template_manager.name_factory_icon)
     return path
     
 def getCommonPixmap(name, x = 32, y = 32):

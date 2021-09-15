@@ -29,6 +29,7 @@ class GroupTreeWidget(QTreeWidget):
         self.setAlternatingRowColors(True)  #흰색/회색 번갈아가며 표시
         self.initHeader()
         self.header().setSectionResizeMode(QHeaderView.ResizeToContents)
+        # 노드 클릭시... 는 아이템 체인지로 대체
         #self.itemClicked.connect(self.onClickNode)
         self.currentItemChanged.connect(self.onItemChanged)
         
@@ -49,76 +50,70 @@ class GroupTreeWidget(QTreeWidget):
         if item is None:
             self.edit_widget.resetInfo()
             return
-        id = int(item.data(1, 0))
-        elem = elem_manager.map_elem[id]
-        self.edit_widget.setInfoEW(elem)
-        
-    def initTree(self, list_args):
-        if self.bCreateTab and self.elem_group is not None:
-            elem_manager.delElemId(self.elem_group)
-    
-        elem_group = elem_manager.ElemGroup(None, None, None)
-        elem_group.initGroup(list_args)
-        
-        self.initTreeByGroup(elem_group)
-
-    def initTreeByGroup(self, elem_group):
-        self.clear()
-        
+        if item.text(0) == 'Add Group' or item.text(0) == 'Add Factory':
+            bGroup = item.text(0) == 'Add Group'
+            elem = None
+            if bGroup:
+                elem = elem_manager.ElemGroup(None, self.elem_group, None)
+            else:
+                elem = elem_manager.ElemFactory(None, self.elem_group)
+            self.updateTree()
+            
+            #생성된 아이템 고르기
+            self.edit_widget.setElem(elem)
+        else:
+            id = int(item.data(1, 0))
+            elem = elem_manager.map_elem[id]
+            self.edit_widget.setElem(elem)
+            
+    def setCurrentSelect(self, elem):
+        head = self.topLevelItem(0)
+        cnt = head.childCount()
+        item = None
+        for i in range(0, cnt):
+            tmp = head.child(i)
+            id = int(tmp.data(1, 0))
+            if id == elem.id:
+                item = tmp
+        if item is not None:
+            self.setCurrentItem(item)
+            
+    def setTreeRootGroup(self, elem_group):
         self.elem_group = elem_group
+        self.rebuildTree()
         
-        item_group = self.initItemByElem(elem_group)
+    def rebuildTree(self):
+        self.clear()
+        item_group = self.createitem_tree(self.elem_group)
         self.addTopLevelItem(item_group)
         
         list_item = []
         
-        if elem_group.id_root is not None:
-            # 정렬 type 1 : 레벨 단위
-            # TODO : 언젠간 없애야함
-            node_root = elem_manager.map_elem[elem_group.id_root]
-        
-            map = dict()
-            map[node_root.id] = node_root
-            q = queue.PriorityQueue()
-            q.put(node_root)
-            while not q.empty():
-                elem = q.get()
-                list_item.append(self.initItemByElem(elem))
-                
-                for key in elem.map_material:
-                    for link_child in elem.map_material[key].list_link:
-                        node = link_child.producer
-                        map[id] = node
-                        q.put(node)
-        else:
-            # 정렬 type 2 : 그냥 child 순위
-            for elem in elem_group.list_child:
-                list_item.append(self.initItemByElem(elem))
-        
+        # 정렬 : 그냥 child 순위
+        for elem in self.elem_group.list_child:
+            list_item.append(self.createitem_tree(elem))
+            
         item_group.addChildren(list_item)
+        
+        # 팩토리/그룹 추가 버튼
+        self.addTopLevelItem(self.createButtonItem('factorio', 'Add Group'))
+        self.addTopLevelItem(self.createButtonItem('factory' , 'Add Factory'))
+        
         self.expandAll ()
         for idx in range(self.columnCount()):
             self.resizeColumnToContents(idx)
+    
+    def updateTree(self):
+        self.rebuildTree()
             
-    def initItemByElem(self, elem):
-        item = QTreeWidgetItem()
-        self.setInfoGT(elem, item)
-        return item
-            
-    def setInfoGT(self, elem, item = None):
+    # 트리용 아이템 만들기
+    def createitem_tree(self, elem):
         if elem is None:
             return
-        if item is None:
-            if self.elem_group.id == elem.id:
-                item = self.topLevelItem(0)
-            else:
-                item_parent = self.topLevelItem(0)
-                for i in range(item_parent.childCount()):
-                    item_tmp = item_parent.child(i)
-                    if int(item_tmp.data(1, 0)) == elem.id:
-                        item = item_tmp
-                        break
-                        
+            
+        item_tree = QTreeWidgetItem()
+        item_tree.bNeedUpdate = False
+        
         icon_item = QIcon()
         if type(elem) == elem_manager.ElemFactory and elem.recipe is not None:
             icon_item.addPixmap(elem.recipe.getPixmap())
@@ -157,15 +152,25 @@ class GroupTreeWidget(QTreeWidget):
         name / ID / result / ingredients / 
         Factory / Speed / Productivity
         '''
-        item.setIcon(0, icon_item)
-        item.setText(0, elem.name)
-        item.setText(1, str(elem.id))
-        item.setText(2, str_product )
-        item.setText(3, str_material)
+        item_tree.setIcon(0, icon_item)
+        item_tree.setText(0, elem.name)
+        item_tree.setText(1, str(elem.id))
+        item_tree.setText(2, str_product )
+        item_tree.setText(3, str_material)
         
-        item.setIcon(4, icon_factory)
-        item.setText(4, str_factory_num)
+        item_tree.setIcon(4, icon_factory)
+        item_tree.setText(4, str_factory_num)
         
-        item.setText(5, str(0))
-        item.setText(5, str(0))
+        item_tree.setText(5, str(0))
+        item_tree.setText(5, str(0))
         
+        return item_tree
+    
+    def createButtonItem(self, icon, text):
+        item_tree = QTreeWidgetItem()
+        item_tree.bNeedUpdate = False
+        icon_item = QIcon()
+        icon_item.addPixmap(common_func.getCommonPixmap(icon))
+        item_tree.setText(0, text)
+        item_tree.setIcon(0, icon_item)
+        return item_tree

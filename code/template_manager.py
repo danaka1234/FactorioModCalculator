@@ -26,6 +26,7 @@ path_clock = ''
 path_fac_icon = ''
 name_clock = 'clock-icon.png'
 name_fac_icon = 'factorio.png'
+name_factory_icon = 'assembling-machine-1.png'
 
 def setTemplateDir(path_template_dir):
     global path_tempdir

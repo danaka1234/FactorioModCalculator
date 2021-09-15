@@ -79,7 +79,7 @@ def getModuleToolTipText(module):
 
 class GridIcon(QVBoxLayout):
     def __init__(self, parent):
-        self.widget_parent = parent
+        self.edit_widget = parent
         
         super().__init__()
         self.initUI()
@@ -125,7 +125,7 @@ class GridIcon(QVBoxLayout):
         self.elem = None
         self.setEnabled(False)
         
-    def setInfoGI(self, elem):
+    def setInfoGridIcon(self, elem):
         self.resetInfo()
         self.elem = elem
         
@@ -171,8 +171,8 @@ class GridIcon(QVBoxLayout):
         ret = dlg.exec_()
         if ret == 1:
             item = item_manager.map_item[dlg.selected]
-            self.widget_parent.elem.changeItem(item)
-            self.widget_parent.setInfoEW(self.widget_parent.elem, True)
+            self.edit_widget.elem.changeItem(item)
+            self.edit_widget.setElem(self.edit_widget.elem, True)
         
     def onClickRecipe(self):
         if self.elem is None or self.elem.item_goal is None:
@@ -191,8 +191,8 @@ class GridIcon(QVBoxLayout):
             if dlg.selected == self.elem.recipe.name:
                 return
             recipe = item_manager.map_recipe[dlg.selected]
-            self.widget_parent.elem.changeRecipe(recipe)
-            self.widget_parent.setInfoEW(self.widget_parent.elem, True)
+            self.edit_widget.elem.changeRecipe(recipe)
+            self.edit_widget.setElem(self.edit_widget.elem, True)
         
     def onClickFactory(self):
         if self.elem is None or self.elem.item_goal is None:
@@ -206,8 +206,8 @@ class GridIcon(QVBoxLayout):
             if dlg.selected == self.elem.factory.name:
                 return
             factory = item_manager.map_factory[dlg.selected]
-            self.widget_parent.elem.changeFactory(factory)
-            self.widget_parent.setInfoEW(self.widget_parent.elem, True)
+            self.edit_widget.elem.changeFactory(factory)
+            self.edit_widget.setElem(self.edit_widget.elem, True)
         
     def setEnabled(self, bEnable, bGroup = False):
         if bEnable:

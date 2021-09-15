@@ -275,12 +275,12 @@ class ElemFactory(Elem):
         self.consumption = 0
         self.pollution = 0
         
-        self.changeItem(item_goal)
+        self.changeItem(item_goal, False)
         self.changeFactoryFromList(list_factory)
         self.changeModule(list_module, bFillFirst=True)
         self.changeGoal(num_goal)
     
-    def changeItem(self, item, bResetRecipe=True):
+    def changeItem(self, item, bUpdate=True, bResetRecipe=True):
         if item is None:
             if self.recipe is None:
                 name_item = list(item_manager.map_item)[0]
@@ -290,18 +290,20 @@ class ElemFactory(Elem):
         
         self.item_goal = item
         
-        if not bResetRecipe:    return
+        if bResetRecipe:
+            if self.recipe is not None:
+                for product in self.recipe.getListProduct():
+                    if product[0] == self.item_goal.name:
+                        self.updateInOut(True)
+                        return
+                    
+            #change recipe
+            name_recipe = self.item_goal.list_madeby[0]
+            recipe = item_manager.map_recipe[name_recipe]
+            self.changeRecipe(recipe, False)
             
-        if self.recipe is not None:
-            for product in self.recipe.getListProduct():
-                if product[0] == self.item_goal.name:
-                    self.updateInOut(True)
-                    return
-                
-        #change recipe
-        name_recipe = self.item_goal.list_madeby[0]
-        recipe = item_manager.map_recipe[name_recipe]
-        self.changeRecipe(recipe, False)
+        if bUpdate:
+            self.group.updateGroupInOut()
         
     def changeRecipe(self, recipe, bItemChange=True, item_goal=None):
         if self.recipe == recipe:
@@ -319,6 +321,7 @@ class ElemFactory(Elem):
         #TODO : 모듈 변경
         #TODO : 처리. 링크 제거?
         self.resetInOut()
+        self.group.updateGroupInOut()
         
     def changeGoal(self, num_goal, bUpdateGroup=True):
         if self.num_goal == num_goal: return
@@ -476,8 +479,8 @@ class ElemFactory(Elem):
                 node_child.makeGraphByDFS(parent_group, map_search_recipe, self.level, list_factory, list_module, beacon)
 
 class ElemGroup(Elem):
-    def __init__(self, id_self, id_group, id_root):
-        super().__init__(id_self, id_group)
+    def __init__(self, id_self, group, id_root):
+        super().__init__(id_self, group)
         self.list_child = []
         self.id_root       = id_root    #이거는 create에서만 쓰자
     

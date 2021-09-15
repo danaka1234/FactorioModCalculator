@@ -52,9 +52,9 @@ class LoadingThread(QThread):
     str_err              = ''
     bWorking             = False    
     
-    def __init__(self, parent_widget):
+    def __init__(self, loading_widget):
         super().__init__()
-        self.parent_widget = parent_widget
+        self.loading_widget = loading_widget
         self.bFinish = False
         self.bWorking = False
         self.list_load = []
@@ -68,7 +68,7 @@ class LoadingThread(QThread):
         len_mainBar = len(self.list_load)
         for i in range(len_mainBar):
             r_main = self.list_load[i]
-            self.parent_widget.mainLabel.setText(r_main.msg)
+            self.loading_widget.mainLabel.setText(r_main.msg)
             self.change_main_bar.emit(int(100*i/len_mainBar))
             
             len_subBar = len(r_main.list_sub)
@@ -76,7 +76,7 @@ class LoadingThread(QThread):
                 if not self.bWorking:
                     break;
                 r_sub = r_main.list_sub[j]
-                self.parent_widget.subLabel.setText(r_sub.msg)
+                self.loading_widget.subLabel.setText(r_sub.msg)
                 self.change_sub_bar.emit(int(100*i/len_subBar))
                 if r_sub.args is not None:
                     r_sub.func(r_sub.args)
@@ -88,9 +88,9 @@ class LoadingThread(QThread):
             self.signal_load_complete.emit()
 
 class LoadingWidget(QWidget):
-    def __init__(self, parent_widget):
+    def __init__(self, main_window):
         super().__init__()
-        self.parent_widget = parent_widget
+        self.main_window = main_window
         self.thread = LoadingThread(self)
         self.initUI()
         
@@ -246,7 +246,7 @@ class LoadingWidget(QWidget):
         #self.thread = None
         #위 문장으로 스레드 파괴가능(단 이 함수를 스레드가 직접호출이 아닌 emit으로 해야함)
         
-        self.parent_widget.setTabWidget()
+        self.main_window.setTabWidget()
 
 # --------------------------- debug
 

@@ -12,7 +12,7 @@ from PyQt5.QtWidgets    import QMainWindow, QApplication
 from PyQt5.QtWidgets    import QWidget, QTabWidget, QGridLayout, QCheckBox, QComboBox
 
 import config_manager
-import open_dialog, loading_widget, t1_create, t2_modify, template_manager, elem_manager, item_manager
+import open_dialog, loading_widget, t2_modify, template_manager, elem_manager, item_manager
 
 class MainWindow(QMainWindow):
     '''
@@ -82,41 +82,7 @@ class MainWindow(QMainWindow):
             self.load_widget.setMsg('Don\'t load', False)
             
     def setTabWidget(self):
-        self.main_widget = QWidget()
-        grid = QGridLayout()
-        self.main_widget.setLayout(grid)
-        
-        grid.setColumnStretch(0, 1)
-        
-        #self.check_auto = QCheckBox('Auto Update')
-        #self.check_auto.setChecked(config_manager.auto_update)
-        #self.check_auto.stateChanged.connect(self.checkAutoUpdate)
-        #grid.addWidget(self.check_auto, 0, 1)
-        
-        self.check_expensive = QCheckBox('Expensive')
-        self.check_expensive.setChecked(config_manager.expensive)
-        grid.addWidget(self.check_expensive, 0, 2)
-        self.check_expensive.stateChanged.connect(self.checkExpensive)
-        
-        self.cb_time = QComboBox()
-        self.cb_time.addItem('items/sec')
-        self.cb_time.addItem('items/min')
-        self.cb_time.addItem('items/hour')
-        self.cb_time.setCurrentIndex(config_manager.time_config)
-        self.cb_time.setFixedWidth(self.cb_time.sizeHint().width())
-        self.cb_time.currentIndexChanged.connect(self.changeCBTime)
-        grid.addWidget(self.cb_time, 0, 3)
-        
-        #https://pythonspot.com/pyqt5-tabs/
-        self.tab_widget = QTabWidget()
-        self.tabs = []
-        self.tabs.append( t1_create.CreateWidget() )
-        self.tabs.append( t2_modify.ModifyWidget() )
-        self.tab_widget.addTab(self.tabs[0],'Grid Creator')
-        self.tab_widget.addTab(self.tabs[1],'Grid Modify')
-        self.tab_widget.setCurrentIndex(1)
-        grid.addWidget(self.tab_widget, 1,0, 1, -1)
-        
+        self.main_widget = t2_modify.ModifyWidget()
         self.setCentralWidget(self.main_widget)
         self.main_widget.show()
         
