@@ -1,13 +1,13 @@
 # coding: utf-8
 
-import sys
-import queue    #https://docs.python.org/ko/3.8/library/queue.html
-
 #core
 from PyQt5.QtWidgets    import QTreeWidget, QTreeWidgetItem, QHeaderView 
 #https://doc.qt.io/qtforpython/PySide2/QtWidgets/QTreeWidget.html
 #https://doc.qt.io/qtforpython/PySide2/QtWidgets/QTreeWidgetItem.html
 #https://doc.qt.io/qtforpython/PySide2/QtCore/QAbstractItemModel.html
+
+from PyQt5.QtWidgets    import QGridLayout
+from PyQt5.QtWidgets    import QWidget, QLabel
 
 #draw
 from PyQt5.QtGui        import QIcon, QPixmap
@@ -57,7 +57,7 @@ class GroupTreeWidget(QTreeWidget):
                 elem = elem_manager.ElemGroup(None, self.elem_group, None)
             else:
                 elem = elem_manager.ElemFactory(None, self.elem_group)
-            self.updateTree()
+            ElemTreeItem(self, elem, self.topLevelItem(0))
             
             #생성된 아이템 고르기
             self.edit_widget.setElem(elem)
@@ -84,16 +84,12 @@ class GroupTreeWidget(QTreeWidget):
         
     def rebuildTree(self):
         self.clear()
-        item_group = self.createitem_tree(self.elem_group)
-        self.addTopLevelItem(item_group)
-        
-        list_item = []
+        item_group = ElemTreeItem(self, self.elem_group, None)
         
         # 정렬 : 그냥 child 순위
         for elem in self.elem_group.list_child:
-            list_item.append(self.createitem_tree(elem))
+            ElemTreeItem(self, elem, item_group)
             
-        item_group.addChildren(list_item)
         
         # 팩토리/그룹 추가 버튼
         self.addTopLevelItem(self.createButtonItem('factorio', 'Add Group'))
@@ -102,17 +98,43 @@ class GroupTreeWidget(QTreeWidget):
         self.expandAll ()
         for idx in range(self.columnCount()):
             self.resizeColumnToContents(idx)
+        
+    def updateItem(self, elem, bUpdateGroup = True):
+        item_group = self.topLevelItem(0)
+        if item_group.elem == elem:
+            item_group.update()
+            return
+        for i in range(0, item_group.childCount()):
+            child = item_group.child(i)
+            child.update()
+        if bUpdateGroup:
+            item_group.update()
     
-    def updateTree(self):
-        self.rebuildTree()
-            
-    # 트리용 아이템 만들기
-    def createitem_tree(self, elem):
+    def createButtonItem(self, icon, text):
+        item_tree = QTreeWidgetItem()
+        icon_item = QIcon()
+        icon_item.addPixmap(common_func.getCommonPixmap(icon))
+        item_tree.setText(0, text)
+        item_tree.setIcon(0, icon_item)
+        return item_tree
+
+# 트리용 아이템
+class ElemTreeItem(QTreeWidgetItem):
+    def __init__(self, treeWidget, elem, item_group):
         if elem is None:
             return
+        super().__init__()
+        self.elem = elem
+        
+        if item_group is None:
+            treeWidget.addTopLevelItem(self)
+        else:
+            item_group.addChild(self)
             
-        item_tree = QTreeWidgetItem()
-        item_tree.bNeedUpdate = False
+        self.update()
+        
+    def update(self):
+        elem = self.elem
         
         icon_item = QIcon()
         if type(elem) == elem_manager.ElemFactory and elem.recipe is not None:
@@ -121,24 +143,38 @@ class GroupTreeWidget(QTreeWidget):
             icon_item.addPixmap(elem.item_goal.getPixmap())
         else:
             icon_item.addPixmap(common_func.getCommonPixmap('factorio'))
-        
-        str_material = ''
-        for key in elem.map_material.keys():
+            
+        widget_material = QWidget()
+        grid_material = QGridLayout()
+        widget_material.setLayout(grid_material)
+        list_key = list(elem.map_material.keys())
+        for i in range(0, len(list_key)):
+            key = list_key[i]
             material = elem.map_material[key]
-            name_material = item_manager.getItemName(key)
-            str_material = str_material + name_material + ' : ' \
-                + common_func.getAmountPerTime(material.num_need)\
-                + '\n'
-        str_material = str_material[0:-1]
+            item = item_manager.map_item[key]
+            
+            text = common_func.getAmountPerTime(material.num_need)
+            label1 = QLabel()
+            label1.setPixmap(item.getPixmap(16, 16))
+            label2 = QLabel(text)
+            grid_material.addWidget(label1, i, 0)
+            grid_material.addWidget(label2, i, 1)
         
-        str_product  = ''
-        for key in elem.map_product.keys():
+        widget_product = QWidget()
+        grid_product = QGridLayout()
+        widget_product.setLayout(grid_product)
+        list_key = list(elem.map_product.keys())
+        for i in range(0, len(list_key)):
+            key = list_key[i]
             product = elem.map_product[key]
-            name_product = item_manager.getItemName(key)
-            str_product = str_product + name_product + ' : '\
-                + common_func.getAmountPerTime(product.num_real)\
-                + '\n'
-        str_product = str_product[0:-1]
+            item = item_manager.map_item[key]
+            
+            text = common_func.getAmountPerTime(product.num_real)
+            label1 = QLabel()
+            label1.setPixmap(item.getPixmap(16, 16))
+            label2 = QLabel(text)
+            grid_product.addWidget(label1, i, 0)
+            grid_product.addWidget(label2, i, 1)
         
         icon_factory = QIcon()
         if type(elem) == elem_manager.ElemGroup:
@@ -152,25 +188,16 @@ class GroupTreeWidget(QTreeWidget):
         name / ID / result / ingredients / 
         Factory / Speed / Productivity
         '''
-        item_tree.setIcon(0, icon_item)
-        item_tree.setText(0, elem.name)
-        item_tree.setText(1, str(elem.id))
-        item_tree.setText(2, str_product )
-        item_tree.setText(3, str_material)
+        treeWidget = self.treeWidget()
+        self.setIcon(0, icon_item)
+        self.setText(0, elem.name)
+        self.setText(1, str(elem.id))
+        treeWidget.setItemWidget(self, 2, widget_product)
+        treeWidget.setItemWidget(self, 3, widget_material)
         
-        item_tree.setIcon(4, icon_factory)
-        item_tree.setText(4, str_factory_num)
+        self.setIcon(4, icon_factory)
+        self.setText(4, str_factory_num)
         
-        item_tree.setText(5, str(0))
-        item_tree.setText(5, str(0))
+        self.setText(5, str(0))
+        self.setText(5, str(0))
         
-        return item_tree
-    
-    def createButtonItem(self, icon, text):
-        item_tree = QTreeWidgetItem()
-        item_tree.bNeedUpdate = False
-        icon_item = QIcon()
-        icon_item.addPixmap(common_func.getCommonPixmap(icon))
-        item_tree.setText(0, text)
-        item_tree.setIcon(0, icon_item)
-        return item_tree

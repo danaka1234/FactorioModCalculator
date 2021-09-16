@@ -201,7 +201,7 @@ class EditWidget(QWidget):
         self.grid_module.resetInfo()
         self.setEnabled(False)
         
-    def setElem(self, elem, bUpdateGroupTree = False):
+    def setElem(self, elem, bUpdateGroup = False):
         self.elem = elem
         
         #공용
@@ -235,10 +235,11 @@ class EditWidget(QWidget):
             self.edit_beacon.setText(str(elem.beacon))
             self.grid_module.setInfoGridModule(elem)
             
-        if bUpdateGroupTree:
-            self.tree_widget.updateTree()
-            self.setElem(elem)
-            self.tree_widget.setCurrentSelect(elem)
+        if bUpdateGroup:
+            # TODO : 링크 있으면 링크 업뎃...
+            
+            # 그룹 업뎃
+            self.tree_widget.updateItem(elem)
             
     def onNameChanged(self):
         if self.elem is None:
@@ -256,7 +257,7 @@ class EditWidget(QWidget):
         goal_tmp = float(self.edit_goal.text())
         goal = goal_tmp / time
         self.elem.changeGoal(goal)
-        self.setElem(self.elem, bUpdateGroupTree=True)
+        self.setElem(self.elem, bUpdateGroup=True)
         
     def onFacNumChanged(self):
         if self.elem is None:
@@ -270,7 +271,7 @@ class EditWidget(QWidget):
             facNum = float(self.edit_factories.text())
             goal = facNum * self.elem.num_goal / self.elem.num_factory 
             self.elem.changeGoal(goal)
-        self.setElem(self.elem, bUpdateGroupTree=True)
+        self.setElem(self.elem, bUpdateGroup=True)
         
 class GridModule(QGridLayout):
     def __init__(self, parent):
