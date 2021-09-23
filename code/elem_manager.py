@@ -283,10 +283,13 @@ class ElemFactory(Elem):
     def changeItem(self, item, bUpdate=True, bResetRecipe=True):
         if item is None:
             if self.recipe is None:
-                name_item = list(item_manager.map_item)[0]
+                tmp = item_manager.getSortedItemList()[0]
+                while type(tmp) != item_manager.Item:
+                    tmp = tmp.list_sub[0]
+                item = tmp
             else:
                 name_item = self.recipe.getListProduct()[0][0]
-            item = item_manager.map_item[name_item]
+                item = item_manager.map_item[name_item]
         
         self.item_goal = item
         
@@ -294,7 +297,7 @@ class ElemFactory(Elem):
             if self.recipe is not None:
                 for product in self.recipe.getListProduct():
                     if product[0] == self.item_goal.name:
-                        self.updateInOut(True)
+                        self.updateInOut()
                         return
                     
             #change recipe

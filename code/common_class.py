@@ -288,7 +288,7 @@ class ChangePopup(QDialog):
         
     def initItems(self):
         y = 0
-        if self.item_type == 'recipe':
+        if self.item_type in ['recipe','factory']:
             self.addButtons(self.list_item)
         elif self.item_type == 'link item':
             y = 1

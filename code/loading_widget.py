@@ -189,10 +189,6 @@ class LoadingWidget(QWidget):
             self.thread.list_load.append(main)
             
             main.list_sub.append(\
-                LoadRapperSub('Delete Hidden Item', \
-                    item_manager.deleteHidden))
-            
-            main.list_sub.append(\
                 LoadRapperSub('Search Item Having No Recipe', \
                     item_manager.searchItemNoRecipe))
             

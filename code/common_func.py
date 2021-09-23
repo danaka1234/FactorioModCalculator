@@ -1,5 +1,5 @@
 # coding: utf-8
-import os
+import os, traceback
 import config_manager, template_manager
 
 from PyQt5.QtGui        import QPixmap
@@ -37,6 +37,8 @@ def getCommonPixmap(name, x = 32, y = 32):
     path = getCommonPath(name)
     return QPixmap(path).scaled(x, y)
 
+def printCallStack():
+    traceback.print_stack()
 
 # -------------------------- debug
 def main():

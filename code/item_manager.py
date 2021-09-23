@@ -86,11 +86,11 @@ class FCITEM:
         return QIcon(pixmap)
         
 class ItemGroup(FCITEM):
-    def __init__(self, name, order):
+    def __init__(self, elem):
         global map_group
-        self.name = name
+        self.name = elem['name']
+        self.order = elem['order']
         self.list_subgroup = []
-        self.order = order
         
         if self.name is not None:
             map_group[self.name] = self
@@ -104,27 +104,24 @@ class ItemGroup(FCITEM):
         
     def fromMap(map):
         global map_group
-        inst = ItemGroup(None, None)
-        inst.name = map['name']
+        inst = ItemGroup(map)
         inst.list_subgroup = map['list_subgroup']
-        inst.order = map['order']
-        map_group[inst.name] = inst
         
 class ItemSubGroup(FCITEM):
-    def __init__(self, name, name_group, order):
+    def __init__(self, elem):
         global map_subgroup, map_group
-        self.name = name
-        self.group = name_group
+        self.name = elem['name']
+        self.group = elem['group']
+        self.order = elem['order']
         self.list_item = []
-        self.order = order
         
         if self.name is not None:
             map_subgroup[self.name] = self
         
-        inst_group = map_group.get(name_group)
+        inst_group = map_group.get(self.group)
         if inst_group is not None:
-            if not name in inst_group.list_subgroup:
-                inst_group.list_subgroup.append(name)
+            if not self.name in inst_group.list_subgroup:
+                inst_group.list_subgroup.append(self.name)
         
     def toMap(self):
         map = {}
@@ -136,23 +133,39 @@ class ItemSubGroup(FCITEM):
         
     def fromMap(map):
         global map_subgroup
-        inst = ItemSubGroup(None,None,None)
-        inst.name = map['name']
-        inst.group = map['group']
+        inst = ItemSubGroup(map)
         inst.list_item = map['list_item']
-        inst.order = map['order']
-        map_subgroup[inst.name] = inst
         
 class Item(FCITEM):
-    def __init__(self, name, type, subgroup, flags, path_icon, order):
+    def __init__(self, elem):
         global map_item, map_subgroup
-        self.name = name
-        self.type = type
-        self.subgroup = subgroup
-        self.flags = flags
-        if path_icon is None:   self.path_icon = ''
-        else:                   self.path_icon = path_icon
-        self.order = order
+        self.name = elem['name']         #name
+        self.type = elem['type']         #type
+        #subgroup
+        self.subgroup = elem['subgroup'] 
+        if self.subgroup is None or self.subgroup == '' :
+            if elem['type'] == 'fluid':
+                self.subgroup = 'fluid'
+            else:
+                self.subgroup = '_Unknown'
+        #flag
+        if elem['flags'] is not None:
+            if type(elem['flags']) == list:
+                self.flags = elem['flags']
+            else:
+                self.flags = list(elem['flags'].values())
+        else: self.flags = []
+        #icon
+        self.path_icon = elem['icon']
+        if self.path_icon is None:
+            if type(elem) != dict and elem['icons'] is not None:
+                self.path_icon = elem['icons']['icon']
+            else:
+                self.path_icon = ''
+        
+        self.order = elem['order']
+        if self.order is None:
+            self.order = 'zzz'
         
         self.list_madeby = []
         self.list_usedto = []
@@ -160,17 +173,10 @@ class Item(FCITEM):
         if self.name is not None:
             map_item[self.name] = self
             
-        if self.order is None:
-            self.order = 'zzz'
-        
-        #TODO : 제거
-        if flags is not None and 'hidden' in flags:
-            return
-        
-        inst_subgroup = map_subgroup.get(subgroup)
+        inst_subgroup = map_subgroup.get(self.subgroup)
         if inst_subgroup is not None:
-            if not name in inst_subgroup.list_item:
-                inst_subgroup.list_item.append(name)
+            if not self.name in inst_subgroup.list_item:
+                inst_subgroup.list_item.append(self.name)
         
     def toMap(self):
         map = {}
@@ -178,45 +184,135 @@ class Item(FCITEM):
         map['type'] = self.type
         map['subgroup'] = self.subgroup
         map['flags'] = self.flags
-        map['path_icon'] = self.path_icon
+        map['icon'] = self.path_icon
         map['order'] = self.order
-        map['list_madeby'] = self.list_madeby
-        map['list_usedto'] = self.list_usedto
+        #map['list_madeby'] = self.list_madeby
+        #map['list_usedto'] = self.list_usedto
         return map
         
     def fromMap(map):
         global map_item
-        inst = Item(None,None,None,None,None,None)
-        inst.type = map['type']
-        inst.name = map['name']
-        inst.subgroup = map['subgroup']
-        inst.flags = map['flags']
-        inst.path_icon = map['path_icon']
-        inst.order = map['order']
-        inst.list_madeby = map['list_madeby']
-        inst.list_usedto = map['list_usedto']
-        map_item[inst.name] = inst
+        inst = Item(map)
+
+def make_recipe_time_in_out(table):
+    time = table['energy_required']
+    if time is None: time = 0.5
+    if table['list_input'] is None:
+        ingredients = make_recipe_sub_list(table['ingredients'])
+    else:
+        ingredients = table['list_input']
+    if table['list_output'] is None:
+        results = make_recipe_results(table)
+    else:
+        results = table['list_output']
     
+    return time, ingredients, results
+
+def make_recipe_sub_list(table):
+    list_result = []
+    
+    for value in table.values():
+        if 'name' not in value.keys():  #[name, num] 나열
+            elem = []
+            for key_sub in value:
+                value_sub = value[key_sub]
+                elem.append(value_sub)
+        else:                           #['name'=name, 'amount'=num, ...] 등
+            num = value['amount']
+            if num is None:
+                if value['amount_min'] is not None:
+                    num = (value['amount_min'] + value['amount_max']) / 2
+                elif value['fluid_amount'] is not None:
+                    num = value['fluid_amount']
+                else : num = 1
+                
+            if value['probability'] is not None:
+                num = num * value['probability']
+            elem = [value['name'], num]
+        list_result.append(elem)
+    return list_result
+    
+def make_recipe_results(table):
+    if table['results'] is not None:
+        return make_recipe_sub_list(table['results'])
+    if table['result_count'] is not None:
+        num = table['result_count']
+    elif table['amount_min'] is not None:
+        num = (table['amount_min'] + table['amount_max']) / 2
+    elif table['fluid_amount'] is not None:
+        num = table['fluid_amount']
+    else :
+        num = 1
+    return [[table['result'], num]]
+
 class Recipe(FCITEM):
-    def __init__(self, name, path_icon, category, subgroup, order, \
-        time, ingredients, results, \
-        time_expensive, ingredients_expensive, results_expensive):
+    def __init__(self, elem, bResource = False):
         global map_recipe, map_item
-        self.name = name
-        self.path_icon = path_icon
-        self.category = category
-        self.subgroup = subgroup
-        self.time = time
-        self.time_expensive = time_expensive
-        self.list_input = ingredients
-        self.list_input_expensive = ingredients_expensive
-        self.list_output = results
-        self.list_output_expensive = results_expensive
-        self.etc = dict()
-        self.order = order
         
-        if self.name is not None:
-            map_recipe[self.name] = self;
+        self.name = elem['name']                #name
+        self.path_icon = elem['icon']           #icon
+        self.category = elem['category']        #category
+        if self.category is None:
+            if bResource == False:
+                self.category = 'basic-crafting'
+            else:
+                self.category = 'basic-solid'
+        self.subgroup = elem['subgroup']        #subgroup
+        
+        '''
+        #hidden 레시피 제외
+        if type(elem) != dict:
+            if elem['hidden'] == True:
+                return
+        '''
+                
+        if type(elem) == dict:
+            self.time = elem['time']
+            self.list_input = elem['list_input']
+            self.list_output = elem['list_output']
+            self.time_expensive = elem.get('time_expensive')
+            self.list_input_expensive = elem.get('list_input_expensive')
+            self.list_output_expensive = elem.get('list_output_expensive')
+        elif bResource == False:
+            #not normal, expensive
+            if elem['expensive'] is None:
+                time, ingredients, results = make_recipe_time_in_out(elem)
+                self.time = time
+                self.list_input = ingredients
+                self.list_output = results
+                self.time_expensive = 0
+                self.list_input_expensive = []
+                self.list_output_expensive = []
+            #normal, expensive
+            else:
+                time, ingredients, results = make_recipe_time_in_out(elem['normal'])
+                time_expensive, ingredients_expensive, results_expensive = \
+                    make_recipe_time_in_out(elem['expensive'])
+                self.time = time
+                self.list_input = ingredients
+                self.list_output = results
+                self.time_expensive = time_expensive
+                self.list_input_expensive = ingredients_expensive
+                self.list_output_expensive = results_expensive
+        else:
+            self.time = None
+            if elem['minable'] is not None:
+                self.time = elem['minable']['mining_time']
+            if self.time is None: self.time = 0.5
+            
+            self.time_expensive = 0
+            self.list_input = []
+            self.list_input_expensive = []
+            
+            self.time_expensive = []
+            self.list_output = make_recipe_results(elem['minable'])
+            self.list_output_expensive = []
+            
+        self.etc = dict()
+        
+        self.order = elem['order']
+        if self.order is None:
+            self.order = 'zzz'
         
         #connect recipe item
         for input in self.list_input:
@@ -224,7 +320,6 @@ class Recipe(FCITEM):
             if item is None:
                 log_manager.write_log('item is None 1 : '+ input[0] + ' not found while loading ' + self.name)
                 exit()
-            if 'hidden' in item.flags: continue
             item.list_usedto.append(self.name)
             
         for output in self.list_output:
@@ -232,13 +327,16 @@ class Recipe(FCITEM):
             if item is None:
                 log_manager.write_log('item is None 2 : '+ output[0] + ' not found while loading ' + self.name)
                 exit()
-            if 'hidden' in item.flags: continue
             item.list_madeby.append(self.name)
+            
+        if self.name is not None:
+            map_recipe[self.name] = self;
+        
         
     def toMap(self):
         map = {}
         map['name'] = self.name
-        map['path_icon'] = self.path_icon
+        map['icon'] = self.path_icon
         map['category'] = self.category
         map['subgroup'] = self.subgroup
         map['time'] = self.time
@@ -253,22 +351,7 @@ class Recipe(FCITEM):
         
     def fromMap(map):
         global map_recipe
-        inst = Recipe(None,None,None,None,None,\
-            None,[],[],\
-            None,[],[])
-        inst.name = map['name']
-        inst.path_icon = map['path_icon']
-        inst.category = map['category']
-        inst.subgroup = map['subgroup']
-        inst.time = map['time']
-        inst.time_expensive = map['time_expensive']
-        inst.list_input = map['list_input']
-        inst.list_input_expensive = map['list_input_expensive']
-        inst.list_output = map['list_output']
-        inst.list_output_expensive = map['list_output_expensive']
-        inst.etc = map['etc']
-        inst.order = map['order']
-        map_recipe[inst.name] = inst
+        inst = Recipe(map)
     
     def getListProduct(self):
         if config_manager.expensive == True:
@@ -322,6 +405,12 @@ class Factory(FCITEM):
         self.energy_source_type = None
         self.energy_source_emissions = None
         
+        '''
+        #hidden 저장 안함
+        if self.flags is not None and 'hidden' in self.flags:
+            return
+        '''
+        
         if self.type == 'mining-drill':
             self.crafting_speed = map.get('mining_speed')
         
@@ -345,9 +434,6 @@ class Factory(FCITEM):
             table = dict(map['energy_source'])
             self.energy_source_type = table.get('type')
             self.energy_source_emissions = table.get('emissions_per_minute')
-        
-        if self.flags is not None and 'hidden' in self.flags:
-            return
             
         if self.name is not None:
             map_factory[self.name] = self
@@ -362,7 +448,7 @@ class Factory(FCITEM):
         map = {}
         map['name'] = self.name
         map['type'] = self.type
-        map['path_icon'] = self.path_icon
+        map['icon'] = self.path_icon
         map['flags'] = self.flags
         map['energy_usage'] = self.energy_usage
         map['crafting_categories'] = self.crafting_categories
@@ -381,25 +467,42 @@ class Factory(FCITEM):
     def fromMap(map):
         global map_factory
         inst = Factory(map)
-
-class Module(FCITEM):
-    def __init__(self, name, path_icon, category, subgroup, tier, limitation, effect, order):
-        self.name = name
-        self.path_icon = path_icon
-        self.category = category
-        self.subgroup = subgroup
-        self.tier = tier
-        self.limitation = limitation
-        self.effect = effect
-        self.order = order
         
+def get_map_from_table(table):
+    map_result = dict()
+    for key in table:
+        elem = table[key]
+        if lua_manager.lupa.lua_type(elem) == 'table':
+            elem = get_map_from_table(elem)
+        map_result[key] = elem
+        
+    return map_result
+    
+class Module(FCITEM):
+    def __init__(self, elem):
+        self.name = elem['name']             #name
+        self.path_icon = elem['icon']        #icon
+        self.category = elem['category']     #category
+        self.subgroup = elem['subgroup']     #subgroup
+        self.tier = elem['tier']
+        self.effect = get_map_from_table(elem['effect'])
+        self.order = elem['order']
+        
+        if elem['limitation'] is not None:
+            if type(elem) == dict:
+                self.limitation = elem['limitation']
+            else:
+                self.limitation = list(elem['limitation'].values())
+        else:
+            self.limitation = []
+    
         if self.name is not None:
             map_module[self.name] = self
         
     def toMap(self):
         map = {}
         map['name'] = self.name
-        map['path_icon'] = self.path_icon
+        map['icon'] = self.path_icon
         map['category'] = self.category
         map['subgroup'] = self.subgroup
         map['tier'] = self.tier
@@ -410,16 +513,7 @@ class Module(FCITEM):
         
     def fromMap(map):
         global map_module
-        inst = Module(None,None,None,None,None,None,None,None)
-        inst.name = map['name']
-        inst.path_icon = map['path_icon']
-        inst.category = map['category']
-        inst.subgroup = map['subgroup']
-        inst.tier = map['tier']
-        inst.limitation = map['limitation']
-        inst.effect = map['effect']
-        inst.order = map['order']
-        map_module[inst.name] = inst
+        inst = Module(map)
 
 def getGroupList():
     global map_group
@@ -510,25 +604,19 @@ def copyIcon():
         if factory.path_icon == '' or factory.path_icon is None : continue
         factory.path_icon = template_manager.loadIcon(factory.path_icon)
 
-def deleteHidden():
-    global map_item
-    list_delete = []
-    for key in map_item:
-        item = map_item[key]
-        if 'hidden' in item.flags:
-            list_delete.append(key)
-    
-    for key in list_delete:
-        del map_item[key]
-        
 def searchItemNoRecipe():
     global map_item
     for item in map_item.values():
         if len(item.list_madeby) == 0:
-            log_manager.write_log("Item has no recipe : " + item.name)
-            Recipe(item.name, '', '_Unknown', '_Unknown', 'zzz', \
-                1, [], [[item.name, 1]], \
-                1, None, None)
+            if 'hidden' not in item.flags:
+                log_manager.write_log("Item has no recipe : " + item.name)
+                
+                map = {
+                    'name' : item.name, 'icon' : '', 'category' : '_Unknown', 'subgroup' : '_Unknown', \
+                    'time' : 1, 'list_input' : [], 'list_output' : [[item.name, 1]], \
+                    'order' : 'zzz', 'expensive' : None
+                }
+                Recipe(map)
                 
 def sortRecipe():
     global map_item, map_recipe
@@ -564,6 +652,10 @@ def sortItemList():
             
             for name_item in subgroup.list_item:
                 item = map_item[name_item]
+                
+                # hidden 제외
+                if 'hidden' in item.flags:
+                    continue
                 
                 bAddGroup = True
                 bAddSubgroup = True

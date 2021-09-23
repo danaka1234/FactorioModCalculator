@@ -24,6 +24,9 @@ config_default['factories']['path_save'] = 'fmc_factories.json'
 config_default['factories']['auto_load'] = 'no'
 config_default['factories']['auto_save'] = 'yes'
 
+config_default['ui'] = dict()
+config_default['ui']['display_monitor'] = '1'
+
 #기타 설정과 전역변수들을 여기에 쑤셔박자
 list_mods_all   = []
 list_mods       = []

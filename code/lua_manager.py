@@ -48,49 +48,20 @@ def make_item_group():
     
     for key in table_item_group:
         elem = table_item_group[key]
-        name = elem['name']
-        order = elem['order']
-        item_manager.ItemGroup(name, order)
+        item_manager.ItemGroup(elem)
         
     for key in table_item_sub_group:
         elem = table_item_sub_group[key]
-        name = elem['name']
-        name_group = elem['group']
-        order = elem['order']
-        item_manager.ItemSubGroup(name, name_group, order)
+        item_manager.ItemSubGroup(elem)
 
     #Unkown 그룹/서브 그룹 추가
-    name_group = '_Unknown'
-    name_subgroup = name_group
-    order = 'zzz'
-    item_manager.ItemGroup(name_group, order)
-    item_manager.ItemSubGroup(name_subgroup, name_group, order)
+    dict_group = {'name' : '_Unknown', 'order' : 'zzz', 'group':'_Unknown'}
+    item_manager.ItemGroup(dict_group)
+    item_manager.ItemSubGroup(dict_group)
     
-def make_item_sub(elem):
-    name = elem['name']         #name
-    type = elem['type']         #type
-    subgroup = elem['subgroup'] #subgroup
-    if subgroup is None or subgroup == '' :
-        if elem['type'] == 'fluid':
-            subgroup = 'fluid'
-        else:
-            subgroup = '_Unknown'
-    #flag
-    if elem['flags'] is not None:
-        flags = list(elem['flags'].values())
-    else: flags = []
-    #icon
-    path_icon = elem['icon']
-    if path_icon is None and elem['icons'] is not None:
-        path_icon = elem['icons']['icon']
-    
-    order = elem['order']
-    
-    item_manager.Item(name, type, subgroup, flags, path_icon, order)
-
 def make_item():
     global lua
-    raw = lua.globals().data.raw
+    raw = lua.globals().data.raw    
 
     list_item_kind = [\
         'item', 'item-with-entity-data', 'capsule', \
@@ -103,53 +74,8 @@ def make_item():
     for kind in list_item_kind:
         table = raw[kind]
         for key in table:
-            make_item_sub(table[key])
+            item_manager.Item(table[key])
 
-def make_recipe_sub_list(table):
-    list_result = []
-    
-    for value in table.values():
-        if 'name' not in value.keys():  #[name, num] 나열
-            elem = []
-            for key_sub in value:
-                value_sub = value[key_sub]
-                elem.append(value_sub)
-        else:                           #['name'=name, 'amount'=num, ...] 등
-            num = value['amount']
-            if num is None:
-                if value['amount_min'] is not None:
-                    num = (value['amount_min'] + value['amount_max']) / 2
-                elif value['fluid_amount'] is not None:
-                    num = value['fluid_amount']
-                else : num = 1
-                
-            if value['probability'] is not None:
-                num = num * value['probability']
-            elem = [value['name'], num]
-        list_result.append(elem)
-    return list_result
-    
-def make_recipe_results(table):
-    if table['results'] is not None:
-        return make_recipe_sub_list(table['results'])
-    if table['result_count'] is not None:
-        num = table['result_count']
-    elif table['amount_min'] is not None:
-        num = (table['amount_min'] + table['amount_max']) / 2
-    elif table['fluid_amount'] is not None:
-        num = table['fluid_amount']
-    else :
-        num = 1
-    return [[table['result'], num]]
-    
-def make_recipe_time_in_out(table):
-    time = table['energy_required']
-    if time is None: time = 0.5
-    ingredients = make_recipe_sub_list(table['ingredients'])
-    results = make_recipe_results(table)
-    
-    return time, ingredients, results
-    
 def make_recipe():
     global lua
     raw = lua.globals().data.raw
@@ -157,56 +83,14 @@ def make_recipe():
     
     for key in table_recipe:
         elem = table_recipe[key]
-        name = elem['name']             #name
-        path_icon = elem['icon']   #icon    
-        category = elem['category']     #category
-        if category is None: category = 'basic-crafting'
-        subgroup = elem['subgroup']     #subgroup
-        order = elem['order']
-        if order is None: order = 'zzz'
-
-        
-        #not normal, expensive
-        if elem['expensive'] is None:
-            time, ingredients, results = make_recipe_time_in_out(elem)
-            time_expensive = 0
-            ingredients_expensive = []
-            results_expensive = []
-        #normal, expensive
-        else:
-            time, ingredients, results = make_recipe_time_in_out(elem['normal'])
-            time_expensive, ingredients_expensive, results_expensive = \
-                make_recipe_time_in_out(elem['expensive'])
-                
-        item_manager.Recipe(name, path_icon, category, subgroup, order, \
-            time, ingredients, results, \
-            time_expensive, ingredients_expensive, results_expensive)
+        item_manager.Recipe(elem)
             
     #resource to recipe
     table_resource = raw['resource']
     
     for key in table_resource:
         elem = table_resource[key]
-        name = elem['name']             #name
-        path_icon = elem['icon']
-        category = elem['category']
-        if category is None : category = 'basic-solid'
-        subgroup = ''
-        order = elem['order']
-        if order is None: order = 'zzz'
-        
-        time = elem['minable']['mining_time']
-        if time is None: time = 0.5
-        results = make_recipe_results(elem['minable'])
-        
-        time_expensive = 0
-        ingredients = []
-        ingredients_expensive = []
-        results_expensive = []
-        
-        item_manager.Recipe(name, path_icon, category, subgroup, order, \
-            time, ingredients, results, \
-            time_expensive, ingredients_expensive, results_expensive)
+        item_manager.Recipe(elem, bResource = True)
 
 def make_factory():
     global lua
@@ -224,16 +108,6 @@ def make_factory():
     for key in raw['mining-drill']:
         item_manager.Factory( raw['mining-drill'][key] )
         
-def get_map_from_table(table):
-    map_result = dict()
-    for key in table:
-        elem = table[key]
-        if lupa.lua_type(elem) == 'table':
-            elem = get_map_from_table(elem)
-        map_result[key] = elem
-        
-    return map_result
-    
 def make_module():
     global lua
     raw = lua.globals().data.raw
@@ -241,18 +115,7 @@ def make_module():
     
     for key in table_module:
         elem = table_module[key]
-        name = elem['name']             #name
-        path_icon = elem['icon']   #icon
-        category = elem['category']     #category
-        subgroup = elem['subgroup']     #subgroup
-        tier = elem['tier']
-        effect = get_map_from_table(elem['effect'])
-        order = elem['order']
-        
-        if elem['limitation'] is None: limitation = []
-        else : limitation = list(elem['limitation'].values())
-        
-        item_manager.Module(name, path_icon, category, subgroup, tier, limitation, effect, order)
+        item_manager.Module(elem)
     
 def parse_locale(path_file, map):
     import configparser
@@ -382,13 +245,16 @@ def make_fluid_sub(table):
             list_input.append([filter, amount])
         elif type_prob == 'output':
             list_output.append([filter, amount])
-            
-    recipe_temp = item_manager.Recipe(name, path_icon, category, subgroup, 'zzz', \
-        time, list_input, list_output, \
-        time_expensive, list_input_expensive, list_output_expensive)
+          
+    map = {
+        'name' : name, 'icon' : path_icon, 'category' : category, 'subgroup' : subgroup, \
+        'time' : time, 'list_input' : list_input, 'list_output' : list_output, \
+        'order' : 'zzz', 'expensive' : None
+    }
+    recipe_temp = item_manager.Recipe(map)
     recipe_temp.etc = etc
     
-    map = { 'name' : name_factory, 'path_icon' : path_icon, 'flags' : flags, 'energy_usage' : energy_usage,\
+    map = { 'name' : name_factory, 'icon' : path_icon, 'flags' : flags, 'energy_usage' : energy_usage,\
         'crafting_categories' : crafting_categories, 'crafting_speed' : crafting_speed, \
         'next_upgrade' : next_upgrade, 'module_slots' : module_slots,\
         'energy_source_type' : energy_source_type, 'energy_source_emissions' : energy_source_emissions}
@@ -513,8 +379,6 @@ def main() :
     make_fluid()
     make_locale(path_factorio)
     
-    
-    item_manager.deleteHidden()
     item_manager.searchItemNoRecipe()
     item_manager.sortRecipe()
     item_manager.copyIcon()

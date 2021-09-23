@@ -4,7 +4,7 @@ import sys, os
 import PyQt5
 
 #core
-from PyQt5.QtWidgets    import QMainWindow, QApplication
+from PyQt5.QtWidgets    import QMainWindow, QApplication, QDesktopWidget
 
 #layout
 
@@ -41,6 +41,14 @@ class MainWindow(QMainWindow):
         self.load_widget = loading_widget.LoadingWidget(self)
         self.main_widget = None
         self.tab_widget = None
+        
+        #move to 2nd or other monitor
+        num_monitor = int(config_manager.get_config('ui', 'display_monitor'))
+        num_monitor = max(0, num_monitor - 1)
+        pos_cur = self.pos()
+        pos_monitor = QDesktopWidget().screenGeometry(num_monitor)
+        
+        self.move(pos_cur.x() + pos_monitor.left(), pos_cur.y() + pos_monitor.top())
         
         self.setCentralWidget(self.load_widget)
         self.show()
