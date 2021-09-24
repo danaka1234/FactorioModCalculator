@@ -192,7 +192,7 @@ class GridIcon(QVBoxLayout):
             if dlg.selected == self.elem.recipe.name:
                 return
             recipe = item_manager.map_recipe[dlg.selected]
-            self.edit_widget.elem.changeRecipe(recipe)
+            self.edit_widget.elem.changeRecipe(recipe, bItemChange=False)
             self.edit_widget.setElem(self.edit_widget.elem, True)
         
     def onClickFactory(self):

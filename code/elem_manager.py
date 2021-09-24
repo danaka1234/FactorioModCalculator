@@ -320,7 +320,7 @@ class ElemFactory(Elem):
             
         #TODO : 모듈 변경
         #TODO : 처리. 링크 제거?
-        #self.resetInOut()
+        self.resetInOut()
         self.group.updateGroupInOut()
         
     def changeGoal(self, num_goal, bUpdateGroup=True):
