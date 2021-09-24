@@ -143,8 +143,9 @@ class GridIcon(QVBoxLayout):
         self.bt_item.setToolTip(elem.item_goal.getName())
         self.bt_recipe.setIcon(elem.recipe.getIcon())
         self.bt_recipe.setToolTip(getRecipeToolTipText(elem.recipe))
-        self.bt_factory.setIcon(elem.factory.getIcon())
-        self.bt_factory.setToolTip(getFactoryToolTipText(elem.factory))
+        if elem.factory is not None:
+            self.bt_factory.setIcon(elem.factory.getIcon())
+            self.bt_factory.setToolTip(getFactoryToolTipText(elem.factory))
         
         map_module = dict()
         for module in elem.modules:

@@ -180,7 +180,10 @@ class ElemTreeItem(QTreeWidgetItem):
         if type(elem) == elem_manager.ElemGroup:
             icon_factory.addPixmap(common_func.getCommonPixmap('factorio'))
         else:
-            icon_factory.addPixmap(elem.factory.getPixmap())
+            if elem.factory is not None:
+                icon_factory.addPixmap(elem.factory.getPixmap())
+            else:
+                icon_factory.addPixmap(common_func.getCommonPixmap('factorio'))
             
         str_factory_num = common_func.getAmountRound(elem.num_factory)
         

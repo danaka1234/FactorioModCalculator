@@ -4,10 +4,7 @@ import sys, math
 import random   #https://docs.python.org/ko/3/library/random.html
 import queue    #https://docs.python.org/ko/3.8/library/queue.html
                 #http://www.daleseo.com/python-priority-queue
-#import copy
-import traceback    #https://stackoverflow.com/questions/1156023/print-current-call-stack-from-a-method-in-python-code
-
-import item_manager
+import item_manager, common_func
 
 map_elem = dict()
 map_link = dict()
@@ -323,7 +320,7 @@ class ElemFactory(Elem):
             
         #TODO : 모듈 변경
         #TODO : 처리. 링크 제거?
-        self.resetInOut()
+        #self.resetInOut()
         self.group.updateGroupInOut()
         
     def changeGoal(self, num_goal, bUpdateGroup=True):
@@ -350,9 +347,15 @@ class ElemFactory(Elem):
         
     def changeFactory(self, factory):
         if factory is None:
-            factory = item_manager.getFactoryListWithItem(self.recipe)[0]
+            list_factory = item_manager.getFactoryListWithItem(self.recipe)
+            if len(list_factory) > 0:
+                factory = list_factory[0]
+            else:
+                factory = None
+            self.num_module = 0
+        else:
+            self.num_module = factory.module_slots
         self.factory = factory
-        self.num_module = factory.module_slots
         #TODO : 모듈 개수 오버하면 변화 / goal에 맞춰 FacNum 변화
         
     def changeModule(self, list_module, bFillFirst=False):
