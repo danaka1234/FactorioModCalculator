@@ -35,11 +35,11 @@ class GroupTreeWidget(QTreeWidget):
         
     def initHeader(self):
         '''
-        name / ID / result / ingredients / 
-        Factory / Speed / Productivity
+        name / ID / ingredients / result / Factory /
+        Module / Etc
         '''
-        list_header = ["Name", "ID", "Result", "Ingredients", 
-            "Factory", "Speed", "Productivity"]
+        list_header = ["Name", "ID", "Ingredients", "Result", 
+            "Factory", "Module", "Etc"]
         self.setHeaderLabels(list_header)
         
         for idx in range(self.columnCount()):
@@ -188,20 +188,24 @@ class ElemTreeItem(QTreeWidgetItem):
             
         str_factory_num = common_func.getAmountRound(elem.num_factory)
         
+        str_energy      = 'Energy    : ' + common_func.getEnergyRound(elem.energy)
+        str_emission    = 'Pollution : ' + common_func.getAmountRound(elem.emission) + '/m'
+        str_etc = str_energy + '\n' + str_emission
+        
         '''
-        name / ID / result / ingredients / 
-        Factory / Speed / Productivity
+        name / ID / ingredients / result / Factory /
+        Module / Etc
         '''
         treeWidget = self.treeWidget()
         self.setIcon(0, icon_item)
         self.setText(0, elem.name)
         self.setText(1, str(elem.id))
-        treeWidget.setItemWidget(self, 2, widget_product)
-        treeWidget.setItemWidget(self, 3, widget_material)
+        treeWidget.setItemWidget(self, 2, widget_material)
+        treeWidget.setItemWidget(self, 3, widget_product)
         
         self.setIcon(4, icon_factory)
         self.setText(4, str_factory_num)
         
         self.setText(5, str(0))
-        self.setText(5, str(0))
+        self.setText(6, str_etc)
         

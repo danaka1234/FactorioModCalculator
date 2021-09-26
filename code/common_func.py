@@ -22,6 +22,21 @@ def getAmountRound(amount, num_for_round = 3):
     str_num = str(round(amount, num_for_round))
     return str_num
     
+def getEnergyRound(amount, num_for_round = 3):
+    str_tail = ''
+    if amount > pow(10, 9):
+        amount = amount / pow(10, 9)
+        str_tail = 'G'
+    elif amount > pow(10, 6):
+        amount = amount / pow(10, 6)
+        str_tail = 'M'
+    elif amount > pow(10, 3):
+        amount = amount / pow(10, 3)
+        str_tail = 'k'
+    str_num = str(round(amount, num_for_round))
+    str_num = str_num + str_tail + 'W'
+    return str_num
+    
 def getCommonPath(name):
     path = ''
     if name == 'clock':

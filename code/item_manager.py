@@ -437,6 +437,15 @@ class Factory(FCITEM):
             
         if self.name is not None:
             map_factory[self.name] = self
+            
+        if type(self.energy_usage) == str:
+            self.energy_usage = self.energy_usage.replace('W', '')
+            self.energy_usage = self.energy_usage.replace('k', '000')
+            self.energy_usage = self.energy_usage.replace('K', '000')
+            self.energy_usage = int(self.energy_usage)
+            # 대기전력 추가
+            if self.energy_source_type == 'electric':
+                self.energy_usage = int(self.energy_usage + self.energy_usage / 30)
         
     def __lt__(self, other):
         if self.crafting_speed != other.crafting_speed:
@@ -558,7 +567,7 @@ def getItemListWithSubgroup(list_subgroup = None):
     list_item.sort(key=lambda elem: elem.order)
     return list_item
     
-def getFactoryListWithItem(recipe = None):
+def getFactoryListByRecipe(recipe = None):
     global map_factory, map_recipe
     list_factory = []
     if recipe is None:

@@ -93,6 +93,9 @@ class Elem:
         self.num_factory = 0    # 공장 개수 = 모듈 비율, 시간 적용한 것
         self.order = ''
         
+        self.energy = 0
+        self.emission = 0
+        
         self.map_product  = dict()  # ElemProduct
         self.map_material = dict()  # ElemMaterial
         self.group = group
@@ -224,6 +227,10 @@ class Elem:
         공장수 = 결과 * 시간 / 생산
         '''
         self.num_factory = goal * time / production
+        
+        # 나중에 모듈 적용하기
+        self.emission = self.factory.energy_source_emissions * self.num_factory
+        self.energy = self.factory.energy_usage * self.num_factory
     
     # self.num_goal 에 따라 product.num_real, material.link.num_need 세팅
     
@@ -557,6 +564,9 @@ class ElemGroup(Elem):
     def updateGroupInOut(self):
         map_all = {}
         
+        self.energy = 0
+        self.emission = 0
+        
         for child in self.list_child:
             for name_material in child.map_material:
                 material = child.map_material[name_material]
@@ -569,6 +579,9 @@ class ElemGroup(Elem):
                 if map_all.get(name_product) is None:
                     map_all[name_product] = 0
                 map_all[name_product] = map_all[name_product] + product.num_real
+                
+            self.energy     = self.energy + child.energy
+            self.emission   = self.emission + child.emission
                 
         #원래는 따로 만들고 업데이트 해야함
         self.map_product = {}
