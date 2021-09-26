@@ -7,11 +7,12 @@ from PyQt5.QtGui        import QPixmap
 def getAmountPerTime(amount, num_for_round = 3):
     time = config_manager.time_set[config_manager.time_config]
     time_name = config_manager.time_name[config_manager.time_config]
+    amount2 = amount/time
     
-    if amount == int(amount):
-        str_num = str(int(amount))
+    if amount2 == int(amount2):
+        str_num = str(int(amount2))
     else:
-        str_num = str(round(amount*time, num_for_round))
+        str_num = str(round(amount2, num_for_round))
     str_num += '/' + time_name
     return str_num
     

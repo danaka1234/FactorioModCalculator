@@ -201,7 +201,7 @@ class EditWidget(QWidget):
         self.grid_module.resetInfo()
         self.setEnabled(False)
         
-    def setElem(self, elem, bUpdateGroup = False):
+    def setElem(self, elem, bUpdateItem = False):
         self.elem = elem
         
         #공용
@@ -226,19 +226,18 @@ class EditWidget(QWidget):
             self.setEnabled(True, True)
             self.edit_beacon.setText('0')
             self.grid_module.resetInfo()
-
         #팩토리 전용
         else:
-            num_goal = elem.num_goal * time
+            num_goal = elem.num_goal / time
             self.edit_goal.setText(common_func.getAmountRound(num_goal, 5))
             self.setEnabled(True)
             self.edit_beacon.setText(str(elem.beacon))
             self.grid_module.setInfoGridModule(elem)
             
-        if bUpdateGroup:
+        if bUpdateItem:
             # TODO : 링크 있으면 링크 업뎃...
             
-            # 그룹 업뎃
+            # 아이템 업뎃
             self.tree_widget.updateItem(elem)
             
     def onNameChanged(self):
@@ -249,15 +248,16 @@ class EditWidget(QWidget):
             self.elem.name \
                 = str(type(self.elem).__name__)[4:] + ' ' + str(self.elem.id)
             self.edit_name.setText(self.elem.name)
+        self.tree_widget.updateItem(self.elem)
         
     def onGoalChanged(self):
         if self.elem is None:
             return
         time = config_manager.time_set[config_manager.time_config]
-        goal_tmp = float(self.edit_goal.text())
-        goal = goal_tmp / time
+        goal = float(self.edit_goal.text()) * time
         self.elem.changeGoal(goal)
-        self.setElem(self.elem, bUpdateGroup=True)
+        self.tree_widget.updateItem(self.elem)
+        self.setElem(self.elem, bUpdateItem=True)
         
     def onFacNumChanged(self):
         if self.elem is None:
@@ -271,7 +271,8 @@ class EditWidget(QWidget):
             facNum = float(self.edit_factories.text())
             goal = facNum * self.elem.num_goal / self.elem.num_factory 
             self.elem.changeGoal(goal)
-        self.setElem(self.elem, bUpdateGroup=True)
+        self.tree_widget.updateItem(self.elem)
+        self.setElem(self.elem, bUpdateItem=True)
         
 class GridModule(QGridLayout):
     def __init__(self, parent):

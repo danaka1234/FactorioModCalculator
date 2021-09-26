@@ -61,6 +61,7 @@ class GroupTreeWidget(QTreeWidget):
             
             #생성된 아이템 고르기
             self.edit_widget.setElem(elem)
+            self.topLevelItem(0).update()
         else:
             id = int(item.data(1, 0))
             elem = elem_manager.map_elem[id]

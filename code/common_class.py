@@ -199,7 +199,7 @@ class GridIcon(QVBoxLayout):
         if self.elem is None or self.elem.item_goal is None:
             return
             
-        list_factory = item_manager.getFactoryListWithItem(self.elem.recipe)
+        list_factory = item_manager.getFactoryListByRecipe(self.elem.recipe)
         
         dlg = ChangePopup(list_factory, 'factory')
         ret = dlg.exec_()
@@ -208,7 +208,8 @@ class GridIcon(QVBoxLayout):
                 return
             factory = item_manager.map_factory[dlg.selected]
             self.edit_widget.elem.changeFactory(factory)
-            self.edit_widget.setElem(self.edit_widget.elem, True)
+            self.edit_widget.setElem(self.elem, True)
+            self.edit_widget.tree_widget.updateItem(self.elem)
         
     def setEnabled(self, bEnable, bGroup = False):
         if bEnable:

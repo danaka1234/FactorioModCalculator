@@ -257,7 +257,7 @@ class Elem:
     '''
     
 class ElemFactory(Elem):
-    def __init__(self, id_self, group, item_goal=None, num_goal=1, list_factory=[], list_module=[], beacon=0):
+    def __init__(self, id_self, group, item_goal=None, num_goal=60, list_factory=[], list_module=[], beacon=0):
         super().__init__(id_self, group)
         self.recipe = None
         self.factory    = None
@@ -342,12 +342,12 @@ class ElemFactory(Elem):
             factory_tmp = factory
             break
         if factory_tmp is None:
-            factory_tmp = item_manager.getFactoryListWithItem(self.recipe)[-1]
+            factory_tmp = item_manager.getFactoryListByRecipe(self.recipe)[-1]
         self.changeFactory(factory_tmp)
         
     def changeFactory(self, factory):
         if factory is None:
-            list_factory = item_manager.getFactoryListWithItem(self.recipe)
+            list_factory = item_manager.getFactoryListByRecipe(self.recipe)
             if len(list_factory) > 0:
                 factory = list_factory[0]
             else:
@@ -356,6 +356,7 @@ class ElemFactory(Elem):
         else:
             self.num_module = factory.module_slots
         self.factory = factory
+        self.updateFactoryNum()
         #TODO : 모듈 개수 오버하면 변화 / goal에 맞춰 FacNum 변화
         
     def changeModule(self, list_module, bFillFirst=False):
