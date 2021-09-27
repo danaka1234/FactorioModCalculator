@@ -43,6 +43,14 @@ def getCommonPath(name):
         path = os.path.join(template_manager.getTemplateDir(), template_manager.name_clock)
     elif name == 'factorio':
         path = os.path.join(template_manager.getTemplateDir(), template_manager.name_fac_icon)
+    elif name == 'electric':
+        path = os.path.join(template_manager.getTemplateDir(), template_manager.name_electric_icon)
+    elif name == 'fuel':
+        path = os.path.join(template_manager.getTemplateDir(), template_manager.name_fuel_icon)
+    elif name == 'pollution':
+        path = os.path.join(template_manager.getTemplateDir(), \
+            'graphics','icons', \
+            template_manager.name_pollution_icon)
     elif name == 'factory':
         path = os.path.join(template_manager.getTemplateDir(), \
             'graphics','icons', \

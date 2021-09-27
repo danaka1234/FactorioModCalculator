@@ -22,11 +22,12 @@ version_current = 1.1
 name_template_json = 'fmc_template.json'
 #load_type = 0
 
-path_clock = ''
-path_fac_icon = ''
 name_clock = 'clock-icon.png'
 name_fac_icon = 'factorio.png'
 name_factory_icon = 'assembling-machine-1.png'
+name_pollution_icon = 'steel-furnace.png'
+name_electric_icon = 'electricity-icon-red.png'
+name_fuel_icon = 'fuel-icon-red.png'
 
 def setTemplateDir(path_template_dir):
     global path_tempdir
@@ -88,13 +89,27 @@ def loadIcon(str_icon):
 def copyDefaultIcon():
     path_template = getTemplateDir()
     path_graphics = os.path.join(config_manager.path_factorio , 'data', 'core', 'graphics')
-    path_clock = os.path.join(path_graphics, name_clock)
-    path_fac_icon = os.path.join(path_graphics, name_fac_icon)
-    path_dest_clock = os.path.join(path_template, name_clock)
-    path_dest_fac_icon = os.path.join(path_template, name_fac_icon)
+    path_alerts =  os.path.join(path_graphics, 'icons', 'alerts')
     
+    path_clock = os.path.join(path_graphics, name_clock)
+    path_dest_clock = os.path.join(path_template, name_clock)
     shutil.copyfile(path_clock, path_dest_clock)
+    
+    path_fac_icon = os.path.join(path_graphics, name_fac_icon)
+    path_dest_fac_icon = os.path.join(path_template, name_fac_icon)
     shutil.copyfile(path_fac_icon, path_dest_fac_icon)
+    
+    path_electro_icon = os.path.join(path_alerts, name_electric_icon)
+    path_dest_electro_icon = os.path.join(path_template, name_electric_icon)
+    shutil.copyfile(path_electro_icon, path_dest_electro_icon)
+    
+    path_fuel_icon = os.path.join(path_alerts, name_fuel_icon)
+    path_dest_fuel_icon = os.path.join(path_template, name_fuel_icon)
+    shutil.copyfile(path_fuel_icon, path_dest_fuel_icon)
+    
+    path_fuel_icon = os.path.join(path_alerts, name_fuel_icon)
+    path_dest_fuel_icon = os.path.join(path_template, name_fuel_icon)
+    shutil.copyfile(path_fuel_icon, path_dest_fuel_icon)
     
 def onExitForFile():
     '''

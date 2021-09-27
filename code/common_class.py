@@ -63,15 +63,33 @@ def getRecipeToolTipText(recipe):
 def getFactoryToolTipText(factory):
     name = factory.getName()
     speed = factory.crafting_speed
+    pollution = factory.energy_source_emissions
+    energy = common_func.getEnergyRound(factory.energy_usage)
+    energy_type = ''
+    if factory.energy_source_type == 'electric':
+        energy_type = common_func.getCommonPath('electric')
+    else:
+        energy_type = common_func.getCommonPath('fuel')
     
     str_ret =   '<style>.td_m {vertical-align:top}</style>'+\
         name +\
-        '<table><tr><td class=\'td_m\'>' +\
+        '<table><tr><td>' +\
             '<img src=\"' +\
             common_func.getCommonPath('clock') +\
             '\" width="16" height="16">' +\
             ': x' + str(speed) +\
+        '</td></tr><tr><td>' +\
+            '<img src=\"' +\
+            energy_type +\
+            '\" width="16" height="16">' +\
+            ': ' + energy +\
+        '</td></tr><tr><td>' +\
+            '<img src=\"' +\
+            common_func.getCommonPath('pollution') +\
+            '\" width="16" height="16">' +\
+            ': ' + str(pollution) + '/m'\
         '</td></tr></table>'
+        
     return str_ret
     
 def getModuleToolTipText(module):

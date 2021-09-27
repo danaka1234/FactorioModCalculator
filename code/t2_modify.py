@@ -21,9 +21,14 @@ class ModifyWidget(QWidget):
         
         self.bt_goOut = QPushButton('Go out')
         self.bt_goInto = QPushButton('Go into')
-        grid.setColumnStretch(4,1)
         grid.addWidget(self.bt_goOut,   0, 2)
         grid.addWidget(self.bt_goInto,  0, 3)
+        
+        self.bt_addGroup = QPushButton('Add Group')
+        self.bt_addFactory = QPushButton('Add Factory')
+        grid.addWidget(self.bt_addGroup,   0, 4)
+        grid.addWidget(self.bt_addFactory,  0, 5)
+        grid.setColumnStretch(6,1)
         
         self.label_group = QLabel('None(0)')
         grid.addWidget(QLabel('Current Group')  , 0, 0)
@@ -31,6 +36,9 @@ class ModifyWidget(QWidget):
     
         self.edit_widget = grid_bottom.edit_widget
         self.tree_widget = grid_bottom.tree_widget
+        
+        self.bt_addGroup.clicked.connect(self.tree_widget.addGroup)
+        self.bt_addFactory.clicked.connect(self.tree_widget.addFactory)
         
         self.setLayout(vbox)
         

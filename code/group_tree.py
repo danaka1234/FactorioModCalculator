@@ -50,18 +50,6 @@ class GroupTreeWidget(QTreeWidget):
         if item is None:
             self.edit_widget.resetInfo()
             return
-        if item.text(0) == 'Add Group' or item.text(0) == 'Add Factory':
-            bGroup = item.text(0) == 'Add Group'
-            elem = None
-            if bGroup:
-                elem = elem_manager.ElemGroup(None, self.elem_group, None)
-            else:
-                elem = elem_manager.ElemFactory(None, self.elem_group)
-            ElemTreeItem(self, elem, self.topLevelItem(0))
-            
-            #생성된 아이템 고르기
-            self.edit_widget.setElem(elem)
-            self.topLevelItem(0).update()
         else:
             id = int(item.data(1, 0))
             elem = elem_manager.map_elem[id]
@@ -91,11 +79,6 @@ class GroupTreeWidget(QTreeWidget):
         for elem in self.elem_group.list_child:
             ElemTreeItem(self, elem, item_group)
             
-        
-        # 팩토리/그룹 추가 버튼
-        self.addTopLevelItem(self.createButtonItem('factorio', 'Add Group'))
-        self.addTopLevelItem(self.createButtonItem('factory' , 'Add Factory'))
-        
         self.expandAll ()
         for idx in range(self.columnCount()):
             self.resizeColumnToContents(idx)
@@ -118,7 +101,23 @@ class GroupTreeWidget(QTreeWidget):
         item_tree.setText(0, text)
         item_tree.setIcon(0, icon_item)
         return item_tree
+        
+    def addGroup(self):
+        elem = elem_manager.ElemGroup(None, self.elem_group, None)
+        ElemTreeItem(self, elem, self.topLevelItem(0))
+        
+        #생성된 아이템 고르기
+        self.edit_widget.setElem(elem)
+        self.topLevelItem(0).update()
 
+    def addFactory(self):
+        elem = elem_manager.ElemFactory(None, self.elem_group)
+        ElemTreeItem(self, elem, self.topLevelItem(0))
+        
+        #생성된 아이템 고르기
+        self.edit_widget.setElem(elem)
+        self.topLevelItem(0).update()
+        
 # 트리용 아이템
 class ElemTreeItem(QTreeWidgetItem):
     def __init__(self, treeWidget, elem, item_group):
