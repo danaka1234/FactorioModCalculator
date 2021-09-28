@@ -228,8 +228,7 @@ class EditWidget(QWidget):
             self.grid_module.resetInfo()
         #팩토리 전용
         else:
-            num_goal = elem.num_goal / time
-            self.edit_goal.setText(common_func.getAmountRound(num_goal, 5))
+            self.edit_goal.setText(common_func.getAmountPerTime(elem.num_goal, 5, bTimeStr=False))
             self.setEnabled(True)
             self.edit_beacon.setText(str(elem.beacon))
             self.grid_module.setInfoGridModule(elem)
@@ -254,7 +253,7 @@ class EditWidget(QWidget):
         if self.elem is None:
             return
         time = config_manager.time_set[config_manager.time_config]
-        goal = float(self.edit_goal.text()) * time
+        goal = float(self.edit_goal.text()) / time
         self.elem.changeGoal(goal)
         self.tree_widget.updateItem(self.elem)
         self.setElem(self.elem, bUpdateItem=True)

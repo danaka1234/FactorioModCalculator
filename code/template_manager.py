@@ -26,7 +26,7 @@ name_clock = 'clock-icon.png'
 name_fac_icon = 'factorio.png'
 name_factory_icon = 'assembling-machine-1.png'
 name_pollution_icon = 'steel-furnace.png'
-name_electric_icon = 'electricity-icon-red.png'
+name_electric_icon = 'electricity-icon-unplugged.png'
 name_fuel_icon = 'fuel-icon-red.png'
 
 def setTemplateDir(path_template_dir):

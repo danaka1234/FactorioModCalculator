@@ -264,7 +264,7 @@ class Elem:
     '''
     
 class ElemFactory(Elem):
-    def __init__(self, id_self, group, item_goal=None, num_goal=60, list_factory=[], list_module=[], beacon=0):
+    def __init__(self, id_self, group, item_goal=None, num_goal=1, list_factory=[], list_module=[], beacon=0):
         super().__init__(id_self, group)
         self.recipe = None
         self.factory    = None
@@ -323,7 +323,7 @@ class ElemFactory(Elem):
         #팩토리 변경
         if self.factory is None\
             or recipe.category not in self.factory.crafting_categories:
-            self.changeFactory(None)
+            self.changeFactory(None, bUpdateGroup = False)
             
         #TODO : 모듈 변경
         #TODO : 처리. 링크 제거?
@@ -352,7 +352,7 @@ class ElemFactory(Elem):
             factory_tmp = item_manager.getFactoryListByRecipe(self.recipe)[-1]
         self.changeFactory(factory_tmp)
         
-    def changeFactory(self, factory):
+    def changeFactory(self, factory, bUpdateGroup = True):
         if factory is None:
             list_factory = item_manager.getFactoryListByRecipe(self.recipe)
             if len(list_factory) > 0:
@@ -364,6 +364,7 @@ class ElemFactory(Elem):
             self.num_module = factory.module_slots
         self.factory = factory
         self.updateFactoryNum()
+        self.group.updateGroupInOut()
         #TODO : 모듈 개수 오버하면 변화 / goal에 맞춰 FacNum 변화
         
     def changeModule(self, list_module, bFillFirst=False):
@@ -497,6 +498,7 @@ class ElemGroup(Elem):
         super().__init__(id_self, group)
         self.list_child = []
         self.id_root       = id_root    #이거는 create에서만 쓰자
+        self.energy_fuel = 0
     
     def deleteElem(self):
         super().deleteElem()
@@ -566,6 +568,7 @@ class ElemGroup(Elem):
         
         self.energy = 0
         self.emission = 0
+        self.energy_fuel = 0
         
         for child in self.list_child:
             for name_material in child.map_material:
@@ -580,7 +583,15 @@ class ElemGroup(Elem):
                     map_all[name_product] = 0
                 map_all[name_product] = map_all[name_product] + product.num_real
                 
-            self.energy     = self.energy + child.energy
+            if type(child) == ElemFactory:
+                if child.factory.energy_source_type == 'electric':
+                    self.energy         = self.energy + child.energy
+                else:
+                    self.energy_fuel    = self.energy_fuel + child.energy
+            else:
+                self.energy         = self.energy + child.energy
+                self.energy_fuel    = self.energy_fuel + child.energy_fuel
+                
             self.emission   = self.emission + child.emission
                 
         #원래는 따로 만들고 업데이트 해야함

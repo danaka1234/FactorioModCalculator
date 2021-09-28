@@ -187,9 +187,45 @@ class ElemTreeItem(QTreeWidgetItem):
             
         str_factory_num = common_func.getAmountRound(elem.num_factory)
         
-        str_energy      = 'Energy    : ' + common_func.getEnergyRound(elem.energy)
-        str_emission    = 'Pollution : ' + common_func.getAmountRound(elem.emission) + '/m'
-        str_etc = str_energy + '\n' + str_emission
+        
+        widget_etc = QWidget()
+        grid_etc = QGridLayout()
+        widget_etc.setLayout(grid_etc)
+        grid_etc.setColumnStretch(3,1)
+        row = 0
+        if type(elem) == elem_manager.ElemGroup:
+            if elem.energy != 0:
+                label1 = QLabel()
+                label1.setPixmap(common_func.getCommonPixmap('electric', 16, 16))
+                label2 = QLabel(common_func.getEnergyRound(elem.energy))
+                grid_etc.addWidget(label1, row, 0)
+                grid_etc.addWidget(label2, row, 1)
+                row = row + 1
+            if elem.energy_fuel != 0:
+                label1 = QLabel()
+                label1.setPixmap(common_func.getCommonPixmap('fuel', 16, 16))
+                label2 = QLabel(common_func.getEnergyRound(elem.energy_fuel))
+                grid_etc.addWidget(label1, row, 0)
+                grid_etc.addWidget(label2, row, 1)
+                row = row + 1
+        else:
+            if elem.energy != 0:
+                label1 = QLabel()
+                name = 'electric'
+                if elem.factory.energy_source_type == 'burner':
+                    name = 'fuel'
+                label1.setPixmap(common_func.getCommonPixmap(name, 16, 16))
+                label2 = QLabel(common_func.getEnergyRound(elem.energy))
+                grid_etc.addWidget(label1, row, 0)
+                grid_etc.addWidget(label2, row, 1)
+                row = row + 1
+        if elem.emission != 0:
+            label1 = QLabel()
+            label1.setPixmap(common_func.getCommonPixmap('pollution', 16, 16))
+            label2 = QLabel(common_func.getAmountRound(elem.emission))
+            grid_etc.addWidget(label1, row, 0)
+            grid_etc.addWidget(label2, row, 1)
+            row = row + 1
         
         '''
         name / ID / ingredients / result / Factory /
@@ -206,5 +242,5 @@ class ElemTreeItem(QTreeWidgetItem):
         self.setText(4, str_factory_num)
         
         self.setText(5, str(0))
-        self.setText(6, str_etc)
+        treeWidget.setItemWidget(self, 6, widget_etc)
         
