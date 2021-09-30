@@ -66,7 +66,7 @@ class FCITEM:
         path = ''
         if type(self) == Item:
             path = self.path_icon
-        elif type(self) == Recipe or type(self) == Factory:
+        elif type(self) in [Recipe, Factory, Module]:
             if self.path_icon is not None and self.path_icon != '':
                 path = self.path_icon
             else:
@@ -592,6 +592,7 @@ def getModuleListWithRecipe(name_recipe = None):
                 continue
             list_module.append(module)
     list_module.sort(key=lambda elem: elem.order)
+    list_module.append(None)
     return list_module
     
 def copyIcon():
@@ -612,6 +613,11 @@ def copyIcon():
         factory = map_factory[key]
         if factory.path_icon == '' or factory.path_icon is None : continue
         factory.path_icon = template_manager.loadIcon(factory.path_icon)
+        
+    for key in map_module.keys():
+        module = map_module[key]
+        if module.path_icon == '' or module.path_icon is None : continue
+        module.path_icon = template_manager.loadIcon(module.path_icon)
 
 def searchItemNoRecipe():
     global map_item
@@ -633,13 +639,11 @@ def sortRecipe():
         item.list_madeby.sort(key=lambda elem: map_recipe[elem].order)
         item.list_usedto.sort(key=lambda elem: map_recipe[elem].order)
         
-
 def getItemName(name):
     item = map_item.get(name)
     if item is None:
         return name
     return item.getName()
-    
 
 class ItemRapper:
     def __init__(self, item):

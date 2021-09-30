@@ -228,10 +228,10 @@ class EditWidget(QWidget):
             self.grid_module.resetInfo()
         #팩토리 전용
         else:
-            self.edit_goal.setText(common_func.getAmountPerTime(elem.num_goal, 5, bTimeStr=False))
+            self.edit_goal.setText(common_func.getAmountPerTime(elem.num_goal, 5, bUnit=False, bTimeStr=False))
             self.setEnabled(True)
             self.edit_beacon.setText(str(elem.beacon))
-            self.grid_module.setInfoGridModule(elem)
+            self.grid_module.updateGridModule()
             
         if bUpdateItem:
             # TODO : 링크 있으면 링크 업뎃...
@@ -315,11 +315,10 @@ class GridModule(QGridLayout):
             self.grid_btn.itemAt(i).widget().setParent(None)
             #self.grid_btn.itemAt(i).widget().deleteLater()
         
-    def setInfoGridModule(self, elem):
-        self.list_module = [['None', '_None']]
-        list_module_from_recipe = item_manager.getModuleListWithRecipe(elem.recipe.name)
-        for module in list_module_from_recipe :
-            self.list_module.append([module.getName(), module.name])
+    def updateGridModule(self):
+        elem = self.edit_widget.elem
+        if type(elem) != elem_manager.ElemFactory:
+            return
             
         self.list_bt = []
         x = 0
@@ -333,10 +332,21 @@ class GridModule(QGridLayout):
             bt.setFixedSize(iconSize, iconSize)
             bt.setIconSize(QSize(iconSize, iconSize))
             bt.clicked.connect(self.onClickItem)
-            bt.selected = 'None'
+            bt.module = None
+            if len(elem.list_module) > i:
+                name_module = elem.list_module[i]
+                module = item_manager.map_item[name_module]
+                bt.module = name_module
+                bt.setIcon(module.getIcon())
+                bt.setToolTip(module.name)
             self.list_bt.append(bt)
             self.grid_btn.addWidget(bt, y, x)
             x += 1
+            
+        self.label_mod_speed    .setText(str(elem.speed))
+        self.label_mod_prob     .setText(str(elem.productivity))
+        self.label_mod_consume  .setText(str(elem.consumption))
+        self.label_mod_poll     .setText(str(elem.pollution))
         
     def setEnabled(self, bEnable):
         if bEnable:
@@ -357,16 +367,35 @@ class GridModule(QGridLayout):
         #set module
         elem = elem_manager.map_elem[self.id_elem]
         module = item_manager.getModuleListWithRecipe(self.name_recipe)[i]
-        elem.modules = [module.name] * elem.num_module
+        elem.list_module = [module.name] * elem.num_module
         
         self.updateModule()
         '''
         pass
         
     def onClickItem(self):
-        #TODO : 제작
-        pass
-
+        elem = self.edit_widget.elem
+        if type(elem) != elem_manager.ElemFactory:
+            return
+        if elem.recipe is None:
+            return
+        
+        button = self.sender()
+        list_module = item_manager.getModuleListWithRecipe(elem.recipe.name)
+        dlg = common_class.ChangePopup(list_module, 'module')
+        ret = dlg.exec_()
+        if ret == 1:
+            if dlg.selected == button.module:
+                return
+            button.module = dlg.selected
+            list_module = []
+            for bt in self.list_bt:
+                if bt.module != None:
+                    list_module.append(bt.module)
+            elem.changeModule(list_module)
+            self.edit_widget.setElem(elem)
+            self.edit_widget.tree_widget.updateItem(elem)
+            
 class GridLink(QGridLayout):
     def __init__(self, parent):
         super().__init__()

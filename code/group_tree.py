@@ -212,7 +212,7 @@ class ElemTreeItem(QTreeWidgetItem):
             if elem.energy != 0:
                 label1 = QLabel()
                 name = 'electric'
-                if elem.factory.energy_source_type == 'burner':
+                if elem.factory.energy_source_type != 'electric':
                     name = 'fuel'
                 label1.setPixmap(common_func.getCommonPixmap(name, 16, 16))
                 label2 = QLabel(common_func.getEnergyRound(elem.energy))

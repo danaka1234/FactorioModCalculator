@@ -4,12 +4,12 @@ import config_manager, template_manager
 
 from PyQt5.QtGui        import QPixmap
 
-def getAmountPerTime(amount, num_for_round = 3, bTimeStr = True):
+def getAmountPerTime(amount, num_for_round = 3, bUnit = True, bTimeStr = True):
     time = config_manager.time_set[config_manager.time_config]
     time_name = config_manager.time_name[config_manager.time_config]
     amount2 = amount*time
     
-    str_num = getAmountRound(amount2, num_for_round)
+    str_num = getAmountRound(amount2, num_for_round, bUnit=bUnit)
     if bTimeStr:
         str_num = str_num + '/' + time_name
     return str_num

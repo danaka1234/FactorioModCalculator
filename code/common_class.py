@@ -166,7 +166,7 @@ class GridIcon(QVBoxLayout):
             self.bt_factory.setToolTip(getFactoryToolTipText(elem.factory))
         
         map_module = dict()
-        for module in elem.modules:
+        for module in elem.list_module:
             if map_module.get(module) is None:
                 map_module[module] = 0
             map_module[module] += 1
@@ -296,9 +296,12 @@ class ChangePopup(QDialog):
         bt_item.setFixedSize(32, 32)
         bt_item.setIconSize(QSize(32, 32))
         bt_item.clicked.connect(self.onButton)
-        bt_item.setIcon(item.getIcon())
-        bt_item.setToolTip(item.getName())
-        bt_item.name_item = item.name
+        if item is not None:
+            bt_item.setIcon(item.getIcon())
+            bt_item.setToolTip(item.getName())
+            bt_item.name_item = item.name
+        else:
+            bt_item.name_item = None
         if bAddProduct:
             bt_item.bProduct = bProduct
         
@@ -308,7 +311,7 @@ class ChangePopup(QDialog):
         
     def initItems(self):
         y = 0
-        if self.item_type in ['recipe','factory']:
+        if self.item_type in ['recipe','factory', 'module']:
             self.addButtons(self.list_item)
         elif self.item_type == 'link item':
             y = 1
