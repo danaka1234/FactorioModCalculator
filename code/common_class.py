@@ -77,17 +77,17 @@ def getFactoryToolTipText(factory):
             '<img src=\"' +\
             common_func.getCommonPath('clock') +\
             '\" width="16" height="16">' +\
-            ': x' + str(speed) +\
+            ' : x' + str(speed) +\
         '</td></tr><tr><td>' +\
             '<img src=\"' +\
             energy_type +\
             '\" width="16" height="16">' +\
-            ': ' + energy +\
+            ' : ' + energy +\
         '</td></tr><tr><td>' +\
             '<img src=\"' +\
             common_func.getCommonPath('pollution') +\
             '\" width="16" height="16">' +\
-            ': ' + str(pollution) + '/m'\
+            ' : ' + str(pollution) + '/m'\
         '</td></tr></table>'
         
     return str_ret

@@ -261,15 +261,8 @@ class EditWidget(QWidget):
     def onFacNumChanged(self):
         if self.elem is None:
             return
-        if isinstance(self.elem, elem_manager.ElemGroup):
-            facNum = float(self.edit_factories.text())
-            self.elem.changeFacNum(facNum)
-        else:
-            if self.elem.num_goal == 0:
-                self.elem.changeGoal(1)
-            facNum = float(self.edit_factories.text())
-            goal = facNum * self.elem.num_goal / self.elem.num_factory 
-            self.elem.changeGoal(goal)
+        facNum = float(self.edit_factories.text())
+        self.elem.changeFacNum(facNum)
         self.tree_widget.updateItem(self.elem)
         self.setElem(self.elem, bUpdateItem=True)
         
@@ -311,21 +304,24 @@ class GridModule(QGridLayout):
         self.label_mod_poll     .setText('0')
         
         self.list_bt.clear()
+        list_tmp = []
         for i in reversed(range(self.grid_btn.count())): 
-            self.grid_btn.itemAt(i).widget().setParent(None)
-            #self.grid_btn.itemAt(i).widget().deleteLater()
-        
+            widget = self.grid_btn.itemAt(i).widget()
+            widget.deleteLater()
+            #widget.setParent(None)
+            
     def updateGridModule(self):
         elem = self.edit_widget.elem
         if type(elem) != elem_manager.ElemFactory:
             return
             
-        self.list_bt = []
+        self.resetInfo()
+        
         x = 0
         y = 0
         iconSize = 32
         for i in range(elem.num_module):
-            if x >= 10:
+            if x >= 4:
                 x = 0
                 y += 1
             bt = QPushButton()
@@ -343,10 +339,10 @@ class GridModule(QGridLayout):
             self.grid_btn.addWidget(bt, y, x)
             x += 1
             
-        self.label_mod_speed    .setText(str(elem.speed))
-        self.label_mod_prob     .setText(str(elem.productivity))
-        self.label_mod_consume  .setText(str(elem.consumption))
-        self.label_mod_poll     .setText(str(elem.pollution))
+        self.label_mod_speed    .setText(common_func.getAmountRound(elem.speed,5))
+        self.label_mod_prob     .setText(common_func.getAmountRound(elem.productivity,5))
+        self.label_mod_consume  .setText(common_func.getAmountRound(elem.consumption,5))
+        self.label_mod_poll     .setText(common_func.getAmountRound(elem.pollution,5))
         
     def setEnabled(self, bEnable):
         if bEnable:

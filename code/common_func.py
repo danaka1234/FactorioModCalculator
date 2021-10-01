@@ -48,9 +48,7 @@ def getCommonPath(name):
     elif name == 'fuel':
         path = os.path.join(template_manager.getTemplateDir(), template_manager.name_fuel_icon)
     elif name == 'pollution':
-        path = os.path.join(template_manager.getTemplateDir(), \
-            'graphics','icons', \
-            template_manager.name_pollution_icon)
+        path = os.path.join(template_manager.getTemplateDir(), template_manager.name_pollution_icon)
     elif name == 'factory':
         path = os.path.join(template_manager.getTemplateDir(), \
             'graphics','icons', \

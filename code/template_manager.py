@@ -25,7 +25,7 @@ name_template_json = 'fmc_template.json'
 name_clock = 'clock-icon.png'
 name_fac_icon = 'factorio.png'
 name_factory_icon = 'assembling-machine-1.png'
-name_pollution_icon = 'steel-furnace.png'
+name_pollution_icon = 'pollution-visualization.png'
 name_electric_icon = 'electricity-icon-unplugged.png'
 name_fuel_icon = 'fuel-icon-red.png'
 
@@ -107,9 +107,9 @@ def copyDefaultIcon():
     path_dest_fuel_icon = os.path.join(path_template, name_fuel_icon)
     shutil.copyfile(path_fuel_icon, path_dest_fuel_icon)
     
-    path_fuel_icon = os.path.join(path_alerts, name_fuel_icon)
-    path_dest_fuel_icon = os.path.join(path_template, name_fuel_icon)
-    shutil.copyfile(path_fuel_icon, path_dest_fuel_icon)
+    path_pollution_icon = os.path.join(path_graphics, name_pollution_icon)
+    path_dest_pollution_icon = os.path.join(path_template, name_pollution_icon)
+    shutil.copyfile(path_pollution_icon, path_dest_pollution_icon)
     
 def onExitForFile():
     '''

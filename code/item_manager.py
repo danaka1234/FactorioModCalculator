@@ -392,6 +392,8 @@ class Recipe(FCITEM):
         
 class Factory(FCITEM):
     def __init__(self, map):
+        global map_factory, map_item
+        
         map = dict(map)
         self.name = map.get('name')
         self.type = map.get('type')
@@ -404,6 +406,9 @@ class Factory(FCITEM):
         self.module_slots = None
         self.energy_source_type = None
         self.energy_source_emissions = None
+        
+        item = map_item[self.name]
+        self.order = item.order
         
         '''
         #hidden 저장 안함
@@ -443,9 +448,11 @@ class Factory(FCITEM):
             self.energy_usage = self.energy_usage.replace('k', '000')
             self.energy_usage = self.energy_usage.replace('K', '000')
             self.energy_usage = int(self.energy_usage)
-            # 대기전력 추가
-            if self.energy_source_type == 'electric':
-                self.energy_usage = int(self.energy_usage + self.energy_usage / 30)
+        
+        self.drain = 0
+        # 대기전력 추가
+        if self.energy_source_type == 'electric':
+            self.drain = self.energy_usage / 30
         
     def __lt__(self, other):
         if self.crafting_speed != other.crafting_speed:
@@ -578,7 +585,7 @@ def getFactoryListByRecipe(recipe = None):
         for factory in map_factory.values():
             if category in factory.crafting_categories:
                 list_factory.append(factory)
-    list_factory.sort()
+    list_factory.sort(key=lambda elem: elem.order)
     return list_factory
     
 def getModuleListWithRecipe(name_recipe = None):

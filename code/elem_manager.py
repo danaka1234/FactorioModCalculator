@@ -157,6 +157,9 @@ class Elem:
             self.map_product[name_product].sum_goal += num_goal
         self.updateGoalByAllProduct()
     
+    def changeFacNum(self, num_factory):
+        self.num_factory = num_factory
+    
     #TODO : 이 아래로 수정
     #제거한것 : 레벨
     
@@ -185,8 +188,6 @@ class Elem:
         
     def updateFactoryNum(self):
         self.num_factory = 1
-        self.emission = 0
-        self.energy = 0
         if self.factory is None:
             return
         time_recipe = self.recipe.getTime()
@@ -209,9 +210,7 @@ class Elem:
         self.num_factory = goal * time / production
         
         # 나중에 모듈 적용하기
-        self.emission = self.factory.energy_source_emissions * self.num_factory * (1 + self.pollution)
-        self.energy = self.factory.energy_usage * self.num_factory * (1 + max(-0.8, self.consumption))
-    
+
     # self.num_goal 에 따라 product.num_real, material.link.num_need 세팅
     
     '''
@@ -258,6 +257,8 @@ class ElemFactory(Elem):
         self.productivity = 0
         self.consumption = 0
         self.pollution = 0
+        
+        self.bFacNumBase = True
         
         self.changeItem(item_goal, False)
         self.changeFactoryFromList(list_factory)
@@ -311,10 +312,11 @@ class ElemFactory(Elem):
         self.list_module = []
         self.updateElem(all=True)
         
-    def changeGoal(self, num_goal, bUpdateGroup=True):
+    def changeGoal(self, num_goal):
         if self.num_goal == num_goal: return
+        self.bFacNumBase = True
         self.num_goal = num_goal
-        self.updateElem(inout=True,facNum=True,group=True)
+        self.updateElem(inout=True,group=True)
         
     def changeFactoryFromList(self, list_factory):
         if self.recipe is None: return
@@ -335,13 +337,34 @@ class ElemFactory(Elem):
             list_factory = item_manager.getFactoryListByRecipe(self.recipe)
             if len(list_factory) > 0:
                 factory = list_factory[-1]
+                self.num_module = factory.module_slots
             else:
                 factory = None
-            self.num_module = 0
+                self.num_module = 0
         else:
             self.num_module = factory.module_slots
         self.factory = factory
-        self.updateElem(facNum=True, group=True)
+        self.updateElem(group=True)
+        
+    def changeFacNum(self, num_factory):
+        if self.num_factory == num_factory: return
+        self.num_factory = num_factory
+        self.bFacNumBase = False
+        self.updateElem(all=True)
+        
+    def updateGoalByFacNum(self):
+        num_recipe = 1  # 레시피 1회당 생산
+        for output in self.recipe.getListProduct():
+            if output[0] == self.item_goal.name:
+                num_recipe = output[1]
+                break
+        
+        # 생산 = 회당 생산 * 공장수 * 공장속도 * 생산 보너스 / 레시피 시간
+        self.num_goal = \
+            num_recipe * self.num_factory * \
+            self.factory.crafting_speed * (1 + self.speed) * \
+            (1 + self.productivity) / \
+            self.recipe.getTime()
         
     def changeModule(self, list_module, bFillFirst=False):
         self.list_module = []
@@ -372,13 +395,25 @@ class ElemFactory(Elem):
         for input in self.recipe.getListMaterial():
             self.map_material[input[0]] = ElemMaterial(input[0])
         
-    def updateElem(self, module = False, inout = False, facNum = False, group = False, all=False):
-        if all or module:
-            self.updateModule()
-        if all or inout:
-            self.updateInOut()
-        if all or facNum:
+    def updateElem(self, module = False, inout = False, group = False, all=False):
+        if self.bFacNumBase:
+            if all or module:
+                self.updateModule()
+            if all or inout:
+                self.updateInOut()
             self.updateFactoryNum()
+        else:
+            self.updateGoalByFacNum()
+            if all or module:
+                self.updateModule()
+            if all or inout:
+                self.updateInOut()
+            
+        self.emission = self.factory.energy_source_emissions * self.num_factory * (1 + self.pollution)
+        self.energy = \
+            self.num_factory * self.factory.energy_usage * (1 + max(-0.8, self.consumption)) \
+            + math.ceil(self.num_factory) * self.factory.drain
+            
         if all or group:
             self.group.updateGroupInOut()
         
@@ -521,10 +556,6 @@ class ElemGroup(Elem):
     def changeItem(self, item):
         self.item_goal = item
         
-    def changeFacNum(self, num_factory):
-        self.num_factory = num_factory
-        #TODO : 할것들
-    
     #list_args = [name_product, goal_per_sec, list_factory, list_module, ratio_beacon]
     '''
     def initGroup(self, args):
