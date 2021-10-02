@@ -187,7 +187,27 @@ class ElemTreeItem(QTreeWidgetItem):
             
         str_factory_num = common_func.getAmountRound(elem.num_factory)
         
+        #Module
+        widget_module = QWidget()
+        if type(elem) == elem_manager.ElemFactory :
+            grid_module = QGridLayout()
+            widget_module.setLayout(grid_module)
+            x_max = 4
+            grid_module.setColumnStretch(x_max+1,1)
+            x = 0
+            y = 0
+            iconSize = 16
+            for name_module in elem.list_module:
+                if x >= 4:
+                    x = 0
+                    y += 1
+                module = item_manager.map_item[name_module]
+                label = QLabel()
+                label.setPixmap(module.getPixmap(iconSize, iconSize))
+                grid_module.addWidget(label, y, x)
+                x += 1
         
+        #ETC
         widget_etc = QWidget()
         grid_etc = QGridLayout()
         widget_etc.setLayout(grid_etc)
@@ -241,6 +261,6 @@ class ElemTreeItem(QTreeWidgetItem):
         self.setIcon(4, icon_factory)
         self.setText(4, str_factory_num)
         
-        self.setText(5, str(0))
+        treeWidget.setItemWidget(self, 5, widget_module)
         treeWidget.setItemWidget(self, 6, widget_etc)
         
