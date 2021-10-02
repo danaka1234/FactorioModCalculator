@@ -385,15 +385,14 @@ def init_grid_item_list(grid, list_item):
     for i in range(len(list_item)):
         elem = list_item[i]
         item = item_manager.map_item[elem[0]]
+        iconSize = 32
         
         label_icon = QLabel()
-        label_icon.setPixmap(item.getPixmap(16, 16))
+        label_icon.setPixmap(item.getPixmap(iconSize, iconSize))
         
-        str_name = item_manager.getItemName(elem[0])
         str_num = common_func.getAmountPerTime(elem[1])
         
         grid.addWidget(label_icon, i, 0)
-        grid.addWidget(QLabel(str_name), i, 1)
-        grid.addWidget(QLabel(str_num), i, 2)
+        grid.addWidget(QLabel(str_num), i, 1)
 
 # --------------------------- debug

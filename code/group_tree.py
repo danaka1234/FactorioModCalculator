@@ -11,9 +11,12 @@ from PyQt5.QtWidgets    import QWidget, QLabel
 
 #draw
 from PyQt5.QtGui        import QIcon, QPixmap
+from PyQt5.QtCore       import QSize
 
 import item_manager, elem_manager, config_manager
 import recipe_form, common_func
+
+head_id = 2
 
 class GroupTreeWidget(QTreeWidget):
     def __init__(self, edit_widget, bCreateTab):
@@ -35,15 +38,18 @@ class GroupTreeWidget(QTreeWidget):
         
     def initHeader(self):
         '''
-        name / ID / ingredients / result / Factory /
+        icon / name / ID / ingredients / result / Factory /
         Module / Etc
         '''
-        list_header = ["Name", "ID", "Ingredients", "Result", 
+        list_header = ["Icon", "Name", "ID", "Ingredients", "Result", 
             "Factory", "Module", "Etc"]
         self.setHeaderLabels(list_header)
         
         for idx in range(self.columnCount()):
+            if idx == 0: continue
             self.resizeColumnToContents(idx)
+        size = QSize(96,32)
+        self.headerItem().setSizeHint(0, size)
         
     def onItemChanged(self, current, previous):
         item = current
@@ -51,7 +57,7 @@ class GroupTreeWidget(QTreeWidget):
             self.edit_widget.resetInfo()
             return
         else:
-            id = int(item.data(1, 0))
+            id = int(item.data(head_id, 0))
             elem = elem_manager.map_elem[id]
             self.edit_widget.setElem(elem)
             
@@ -61,7 +67,7 @@ class GroupTreeWidget(QTreeWidget):
         item = None
         for i in range(0, cnt):
             tmp = head.child(i)
-            id = int(tmp.data(1, 0))
+            id = int(tmp.data(head_id, 0))
             if id == elem.id:
                 item = tmp
         if item is not None:
@@ -81,6 +87,7 @@ class GroupTreeWidget(QTreeWidget):
             
         self.expandAll ()
         for idx in range(self.columnCount()):
+            if idx == 0: continue
             self.resizeColumnToContents(idx)
         
     def updateItem(self, elem, bUpdateGroup = True):
@@ -135,14 +142,16 @@ class ElemTreeItem(QTreeWidgetItem):
         
     def update(self):
         elem = self.elem
+        iconSize = 32
         
-        icon_item = QIcon()
+        widget_icon = QLabel()
         if type(elem) == elem_manager.ElemFactory and elem.recipe is not None:
-            icon_item.addPixmap(elem.recipe.getPixmap())
+            widget_icon.setPixmap(elem.recipe.getPixmap(iconSize, iconSize))
         elif type(elem) == elem_manager.ElemGroup and elem.item_goal is not None: 
-            icon_item.addPixmap(elem.item_goal.getPixmap())
+            widget_icon.setPixmap(elem.item_goal.getPixmap(iconSize, iconSize))
         else:
-            icon_item.addPixmap(common_func.getCommonPixmap('factorio'))
+            widget_icon.setPixmap(common_func.getCommonPixmap('factorio', iconSize, iconSize))
+        
             
         widget_material = QWidget()
         grid_material = QGridLayout()
@@ -155,7 +164,7 @@ class ElemTreeItem(QTreeWidgetItem):
             
             text = common_func.getAmountPerTime(material.num_need)
             label1 = QLabel()
-            label1.setPixmap(item.getPixmap(16, 16))
+            label1.setPixmap(item.getPixmap(iconSize, iconSize))
             label2 = QLabel(text)
             grid_material.addWidget(label1, i, 0)
             grid_material.addWidget(label2, i, 1)
@@ -171,21 +180,28 @@ class ElemTreeItem(QTreeWidgetItem):
             
             text = common_func.getAmountPerTime(product.num_real)
             label1 = QLabel()
-            label1.setPixmap(item.getPixmap(16, 16))
+            label1.setPixmap(item.getPixmap(iconSize, iconSize))
             label2 = QLabel(text)
             grid_product.addWidget(label1, i, 0)
             grid_product.addWidget(label2, i, 1)
         
-        icon_factory = QIcon()
+        #Factory
+        widget_factory = QWidget()
+        grid_factory = QGridLayout()
+        widget_factory.setLayout(grid_factory)
+        label1 = QLabel()
         if type(elem) == elem_manager.ElemGroup:
-            icon_factory.addPixmap(common_func.getCommonPixmap('factorio'))
+            label1.setPixmap(common_func.getCommonPixmap('factorio'))
         else:
             if elem.factory is not None:
-                icon_factory.addPixmap(elem.factory.getPixmap())
+                label1.setPixmap(elem.factory.getPixmap())
             else:
-                icon_factory.addPixmap(common_func.getCommonPixmap('factorio'))
+                label1.setPixmap(common_func.getCommonPixmap('factorio'))
             
         str_factory_num = common_func.getAmountRound(elem.num_factory)
+        label2 = QLabel(str_factory_num)
+        grid_factory.addWidget(label1, 0, 0)
+        grid_factory.addWidget(label2, 0, 1)
         
         #Module
         widget_module = QWidget()
@@ -196,7 +212,6 @@ class ElemTreeItem(QTreeWidgetItem):
             grid_module.setColumnStretch(x_max+1,1)
             x = 0
             y = 0
-            iconSize = 16
             for name_module in elem.list_module:
                 if x >= 4:
                     x = 0
@@ -216,14 +231,14 @@ class ElemTreeItem(QTreeWidgetItem):
         if type(elem) == elem_manager.ElemGroup:
             if elem.energy != 0:
                 label1 = QLabel()
-                label1.setPixmap(common_func.getCommonPixmap('electric', 16, 16))
+                label1.setPixmap(common_func.getCommonPixmap('electric', iconSize, iconSize))
                 label2 = QLabel(common_func.getEnergyRound(elem.energy))
                 grid_etc.addWidget(label1, row, 0)
                 grid_etc.addWidget(label2, row, 1)
                 row = row + 1
             if elem.energy_fuel != 0:
                 label1 = QLabel()
-                label1.setPixmap(common_func.getCommonPixmap('fuel', 16, 16))
+                label1.setPixmap(common_func.getCommonPixmap('fuel', iconSize, iconSize))
                 label2 = QLabel(common_func.getEnergyRound(elem.energy_fuel))
                 grid_etc.addWidget(label1, row, 0)
                 grid_etc.addWidget(label2, row, 1)
@@ -234,33 +249,30 @@ class ElemTreeItem(QTreeWidgetItem):
                 name = 'electric'
                 if elem.factory.energy_source_type != 'electric':
                     name = 'fuel'
-                label1.setPixmap(common_func.getCommonPixmap(name, 16, 16))
+                label1.setPixmap(common_func.getCommonPixmap(name, iconSize, iconSize))
                 label2 = QLabel(common_func.getEnergyRound(elem.energy))
                 grid_etc.addWidget(label1, row, 0)
                 grid_etc.addWidget(label2, row, 1)
                 row = row + 1
         if elem.emission != 0:
             label1 = QLabel()
-            label1.setPixmap(common_func.getCommonPixmap('pollution', 16, 16))
+            label1.setPixmap(common_func.getCommonPixmap('pollution', iconSize, iconSize))
             label2 = QLabel(common_func.getAmountRound(elem.emission))
             grid_etc.addWidget(label1, row, 0)
             grid_etc.addWidget(label2, row, 1)
             row = row + 1
         
         '''
-        name / ID / ingredients / result / Factory /
+        icon / name / ID / ingredients / result / Factory /
         Module / Etc
         '''
         treeWidget = self.treeWidget()
-        self.setIcon(0, icon_item)
-        self.setText(0, elem.name)
-        self.setText(1, str(elem.id))
-        treeWidget.setItemWidget(self, 2, widget_material)
-        treeWidget.setItemWidget(self, 3, widget_product)
-        
-        self.setIcon(4, icon_factory)
-        self.setText(4, str_factory_num)
-        
-        treeWidget.setItemWidget(self, 5, widget_module)
-        treeWidget.setItemWidget(self, 6, widget_etc)
+        treeWidget.setItemWidget(self, 0, widget_icon)
+        self.setText(1, elem.name)
+        self.setText(head_id, str(elem.id))
+        treeWidget.setItemWidget(self, 3, widget_material)
+        treeWidget.setItemWidget(self, 4, widget_product)
+        treeWidget.setItemWidget(self, 5, widget_factory)
+        treeWidget.setItemWidget(self, 6, widget_module)
+        treeWidget.setItemWidget(self, 7, widget_etc)
         
