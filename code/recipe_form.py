@@ -74,60 +74,55 @@ class EditWidget(QWidget):
         self.setLayout(grid1)
         
         grid_info = QGridLayout()
-        grid1.addLayout(grid_info, 0, 0, 1, 2)
+        grid1.addLayout(grid_info, 0, 0, 1, 1)
         
-        vbox = QVBoxLayout()
         group_material = QGroupBox('Ingredients')
         group_product  = QGroupBox('Results')
-        vbox.addWidget(group_material)
-        vbox.addWidget(group_product)
-        grid1.addLayout(vbox, 1,0,2,1)
-        
-        self.grid_link = GridLink(self)
-        grid1.addLayout(self.grid_link, 1, 1)
+        hbox = QHBoxLayout()
+        hbox.addWidget(group_material)
+        hbox.addWidget(group_product)
+        grid1.addLayout(hbox, 1,0,1,2)
         
         self.grid_module = GridModule(self)
-        grid1.addLayout(self.grid_module, 2, 1)
+        grid1.addLayout(self.grid_module, 0, 1)
+        
+        grid1.setRowStretch(0, 1)
+        grid1.setRowStretch(1, 1)
+        grid1.setColumnStretch(0, 1)
+        grid1.setColumnStretch(1, 1)
         
         #------------------------- grid_info
         self.grid_icon = common_class.GridIcon(self)
-        grid_info.addLayout(self.grid_icon, 0, 0, 5, 2)
-        grid_info.setColumnStretch(1,1)
-        grid_info.addWidget(QLabel('Order'), 5, 0)
-        self.edit_order = QLineEdit()
-        self.edit_order.setFixedWidth(80)
-        #self.edit_order.editingFinished.connect(self.onNameChanged)
-        grid_info.addWidget(self.edit_order, 5, 1)
+        grid_info.addLayout(self.grid_icon, 0, 0, 1, 2)
         
-        grid_info.addWidget(QLabel('Name'), 0, 2)
-        grid_info.addWidget(QLabel('ID'), 1, 2)
-        grid_info.addWidget(QLabel('Goal'), 2, 2)
-        grid_info.addWidget(QLabel('Factories'), 3, 2)
-        grid_info.addWidget(QLabel('Beacon(%)'), 4, 2)
-        grid_info.addWidget(QLabel('Total Fac'), 5, 2)
+        grid_info.addWidget(QLabel('Name')      , 1, 0)
+        grid_info.addWidget(QLabel('ID')        , 2, 0)
+        grid_info.addWidget(QLabel('Goal')      , 3, 0)
+        grid_info.addWidget(QLabel('Factories') , 4, 0)
+        grid_info.addWidget(QLabel('Beacon(%)') , 5, 0)
         
         self.edit_name = QLineEdit()
         self.edit_name.setFixedWidth(80)
         self.edit_name.editingFinished.connect(self.onNameChanged)
-        grid_info.addWidget(self.edit_name, 0, 3)
         self.label_id = QLabel('')
-        grid_info.addWidget(self.label_id, 1, 3)
         self.edit_goal = QLineEdit()
         self.edit_goal.setFixedWidth(80)
         self.edit_goal.setValidator(QDoubleValidator())
         self.edit_goal.editingFinished.connect(self.onGoalChanged)
-        grid_info.addWidget(self.edit_goal, 2, 3)
         self.edit_factories = QLineEdit()
         self.edit_factories.setFixedWidth(80)
         self.edit_factories.setValidator(QDoubleValidator())
         self.edit_factories.editingFinished.connect(self.onFacNumChanged)
-        grid_info.addWidget(self.edit_factories, 3, 3)
         self.edit_beacon = QLineEdit()
         self.edit_beacon.setFixedWidth(80)
         self.edit_beacon.setValidator(QDoubleValidator())
-        grid_info.addWidget(self.edit_beacon, 4, 3)
-        self.label_total = QLabel('0')
-        grid_info.addWidget(self.label_total, 5, 3)
+        grid_info.addWidget(self.edit_name      , 1, 1)
+        grid_info.addWidget(self.label_id       , 2, 1)
+        grid_info.addWidget(self.edit_goal      , 3, 1)
+        grid_info.addWidget(self.edit_factories , 4, 1)
+        grid_info.addWidget(self.edit_beacon    , 5, 1)
+        
+        grid_info.setRowStretch(7, 1)
         
         #------------------------- group material product
         self.grid_mat = QGridLayout()
@@ -161,22 +156,18 @@ class EditWidget(QWidget):
         
     def setEnabled(self, bEnable, bGroup = False):
         if not bEnable:
-            self.edit_order.setEnabled(False)
             self.edit_name.setEnabled(False)
             self.edit_goal.setEnabled(False)
             self.edit_factories.setEnabled(False)
             self.edit_beacon.setEnabled(False)
             self.grid_icon.setEnabled(False)
-            self.grid_link.setEnabled(False)
             self.grid_module.setEnabled(False)
             return
             
         #공용
-        self.edit_order.setEnabled(True)
         self.edit_name.setEnabled(True)
         self.edit_factories.setEnabled(True)
         self.grid_icon.setEnabled(True, bGroup)
-        self.grid_link.setEnabled(True)
         
         #각자
         if bGroup:
@@ -197,7 +188,6 @@ class EditWidget(QWidget):
         self.set_matearial_product()
         
         self.grid_icon.resetInfo()
-        self.grid_link.resetInfo()
         self.grid_module.resetInfo()
         self.setEnabled(False)
         
@@ -211,15 +201,7 @@ class EditWidget(QWidget):
         self.edit_factories.setText(common_func.getAmountRound(elem.num_factory))
         self.set_matearial_product()
         
-        num_fac_total = elem.num_factory
-        group = self.elem.group
-        while group is not None:
-            num_fac_total *= group.num_factory
-            group = group.group
-        self.label_total.setText(common_func.getAmountRound(num_fac_total))
-        
-        self.grid_icon.setInfoGridIcon(elem)
-        self.grid_link.setInfoGridLink(elem)
+        #self.grid_icon.setInfoGridIcon(elem)
         
         #그룹 전용
         if type(elem) != elem_manager.ElemFactory:
@@ -274,28 +256,34 @@ class GridModule(QGridLayout):
         self.initUI()
         
     def initUI(self):
-        self.addWidget(QLabel('Module'), 0,0)
-        self.addWidget(QLabel('Speed'), 1,0)
-        self.addWidget(QLabel('Prod'), 2,0)
-        self.addWidget(QLabel('Consume'), 3,0)
-        self.addWidget(QLabel('Poll'), 4,0)
+        groupbox = QGroupBox('Module')
+        grid = QGridLayout()
+        self.addWidget(groupbox, 0,0)
+        groupbox.setLayout(grid)
+        
+        grid.addWidget(QLabel('Speed')  , 0,0)
+        grid.addWidget(QLabel('Prod')   , 1,0)
+        grid.addWidget(QLabel('Consume'), 2,0)
+        grid.addWidget(QLabel('Poll')   , 3,0)
         
         self.label_mod_speed = QLabel('0')
-        self.addWidget(self.label_mod_speed, 1,1)
+        grid.addWidget(self.label_mod_speed, 0,1)
         self.label_mod_prob = QLabel('0')
-        self.addWidget(self.label_mod_prob, 2,1)
+        grid.addWidget(self.label_mod_prob, 1,1)
         self.label_mod_consume = QLabel('0')
-        self.addWidget(self.label_mod_consume, 3,1)
+        grid.addWidget(self.label_mod_consume, 2,1)
         self.label_mod_poll = QLabel('0')
-        self.addWidget(self.label_mod_poll, 4,1)
+        grid.addWidget(self.label_mod_poll, 3,1)
         
         self.bt_fill = QPushButton('Fill 1st Module')
         self.bt_fill.clicked.connect(self.onClickFillModule)
-        self.addWidget(self.bt_fill, 5,0,1,2)
+        self.addWidget(self.bt_fill, 1,0)
         
         self.grid_btn = QGridLayout()
         self.grid_btn.setSpacing(0)
-        self.addLayout(self.grid_btn, 6,0,1,2)
+        self.addLayout(self.grid_btn, 2,0)
+        
+        self.setRowStretch(3, 1)
         
     def resetInfo(self):
         self.label_mod_speed    .setText('0')
@@ -392,185 +380,6 @@ class GridModule(QGridLayout):
             self.edit_widget.setElem(elem)
             self.edit_widget.tree_widget.updateItem(elem)
             
-class GridLink(QGridLayout):
-    def __init__(self, parent):
-        super().__init__()
-        
-        self.edit_widget = parent
-        self.bProduct = True
-        self.selected = None
-        self.elem = None
-        self.initUI()
-        
-    def initUI(self):
-        self.list_link = QListWidget()
-        self.list_link.setFixedWidth(120)
-        self.addWidget(self.list_link, 0, 0, 1, 2)
-        
-        label = QLabel('ID')
-        label.setFixedWidth(60)
-        self.addWidget(label, 1,0)
-        label = QLabel('Ratio')
-        label.setFixedWidth(60)
-        self.addWidget(label, 2,0)
-        label = QLabel('Item')
-        label.setFixedWidth(60)
-        self.addWidget(label, 3,0)
-        self.label_type = QLabel('(Result)')
-        self.label_type.setFixedWidth(60)
-        self.addWidget(self.label_type, 4,0)
-        self.le_linkID = QLineEdit()
-        self.le_linkID.setFixedWidth(60)
-        self.le_linkID.setValidator(QIntValidator())
-        self.addWidget(self.le_linkID, 1,1)
-        self.le_linkAmount = QLineEdit()
-        self.le_linkAmount.setFixedWidth(60)
-        self.le_linkAmount.setValidator(QDoubleValidator())
-        self.addWidget(self.le_linkAmount, 2,1)
-        self.bt_item = QPushButton()
-        self.bt_item.setFixedSize(32, 32)
-        self.bt_item.setIconSize(QSize(32, 32))
-        self.bt_item.clicked.connect(self.onClickLinkItem)
-        self.addWidget(self.bt_item, 3,1,2,1)
-        
-        hbox = QHBoxLayout()
-        self.addLayout(hbox,5,0,1,2)
-        self.bt_add = QPushButton('Add')
-        self.bt_add.clicked.connect(self.onAddLink)
-        self.bt_add.setFixedWidth(50)
-        hbox.addWidget(self.bt_add)
-        self.bt_del = QPushButton('Del')
-        self.bt_del.clicked.connect(self.onDelLink)
-        self.bt_del.setFixedWidth(50)
-        hbox.addWidget(self.bt_del)
-        
-    def resetInfo(self):
-        self.bt_item.setIcon(QIcon())
-        self.bt_item.setToolTip('')
-        
-    def setInfoGridLink(self, elem):
-        self.elem = elem
-        list_product = list(elem.map_product.values())
-        name_item = None
-        if len(list_product) != 0:
-            name_item = list_product[0].name_product
-            self.bProduct = True
-        else:
-            list_material = list(elem.map_material.values())
-            if len(list_material) == 0:
-                self.resetInfo()
-                return
-            name_item = list_material[0].name_material
-            self.bFalse = True
-        
-        item = item_manager.map_item[name_item]
-        self.bt_item.setIcon(item.getIcon())
-        self.bt_item.setToolTip(item.getName())
-        self.selected = item
-        
-        self.list_link.clear()
-        
-        for product in elem.map_product.values():
-            for link in product.list_link:
-                item = item_manager.map_item[link.name]
-                #str_item = item.getName() + ':' + str(link.ratio) + ' > ' + str(link.consumer.id)
-                str_item = ':' + str(link.ratio) + ' > ' + str(link.consumer.id)
-                item_list = QListWidgetItem(item.getIcon(), str_item)
-                self.list_link.addItem(item_list)
-        for material in elem.map_material.values():
-            for link in material.list_link:
-                item = item_manager.map_item[link.name]
-                str_item = ':' + str(link.ratio) + ' < ' + str(link.producer.id)
-                item_list = QListWidgetItem(item.getIcon(), str_item)
-                self.list_link.addItem(item_list)
-
-    def setEnabled(self, bEnable):
-        if bEnable:
-            self.bt_add.setEnabled(True)
-            self.bt_del.setEnabled(True)
-            self.bt_item.setEnabled(True)
-        else:
-            self.bt_add.setEnabled(False)
-            self.bt_del.setEnabled(False)
-            self.bt_item.setEnabled(False)
-        
-    def onClickLinkItem(self):
-        list_material_tmp = self.elem.recipe.getListMaterial()
-        list_product_tmp = self.elem.recipe.getListProduct()
-        list_material = []
-        list_product = []
-        for elem in list_material_tmp:
-            item = item_manager.map_item[elem[0]]
-            list_material.append(item)
-        for elem in list_product_tmp:
-            item = item_manager.map_item[elem[0]]
-            list_product.append(item)
-        dlg = common_class.ChangePopup([list_material, list_product], 'link item')
-        ret = dlg.exec_()
-        if ret == 1:
-            item = item_manager.map_item[dlg.selected]
-            self.bt_item.setIcon(item.getIcon())
-            self.bt_item.setToolTip(item.getName())
-            self.bProduct = dlg.bProduct
-            self.selected = item
-            if self.bProduct:
-                self.label_type.setText('(Result)')
-            else:
-                self.label_type.setText('(Ingredients)')
-            
-    def onAddLink(self):
-        try:
-            id = int(self.le_linkID.text())
-            ratio = float(self.le_linkAmount.text())
-        except:
-            return
-        item = self.selected
-        bProduct = self.bProduct
-        
-        # elem 검사
-        if bProduct:
-            producer = self.elem
-            consumer = elem_manager.map_elem.get(id)
-        else:
-            producer = elem_manager.map_elem.get(id)
-            consumer = self.elem
-            
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Warning)
-            
-        if producer is None or consumer is None or producer.id == consumer.id:
-            msg.setText('Id is same or not exist')
-            msg.exec_()
-            return
-        if producer.group != consumer.group:
-            msg.setText('Not same group')
-            msg.exec_()
-            return
-        if producer.map_product.get(item.name) is None\
-            or consumer.map_material.get(item.name) is None:
-            msg.setText('Result or Ingredient not exist')
-            msg.exec_()
-            return
-        
-        # 링크 있는지 찾아보기
-        for link in producer.map_product[item.name].list_link:
-            if link.consumer == consumer:
-                msg.setText('Already linked')
-                msg.exec_()
-                return
-        
-        # 넣기
-        producer.connectProduct(consumer, item.name)
-        
-        # 비율 업데이트
-        #TODO : 작성중
-        
-        # UI 업데이트
-        self.edit_widget.setElem(self.elem)
-        
-    def onDelLink(self):
-        pass
-        
 def init_grid_item_list(grid, list_item):
     for i in reversed(range(grid.count())): 
         grid.itemAt(i).widget().setParent(None)

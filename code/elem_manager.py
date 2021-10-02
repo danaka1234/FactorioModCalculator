@@ -411,7 +411,7 @@ class ElemFactory(Elem):
             
         self.emission = self.factory.energy_source_emissions * self.num_factory * (1 + self.pollution)
         self.energy = \
-            self.num_factory * self.factory.energy_usage * (1 + max(-0.8, self.consumption)) \
+            self.num_factory * self.factory.energy_usage * (1 + self.consumption) \
             + math.ceil(self.num_factory) * self.factory.drain
             
         if all or group:
@@ -477,6 +477,8 @@ class ElemFactory(Elem):
                     self.consumption += value
                 elif key == 'pollution':
                     self.pollution += value
+                    
+        self.consumption = max(-0.8, self.consumption)
         
     def __lt__(self, other):
         if self.level != other.level:

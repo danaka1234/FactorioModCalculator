@@ -115,24 +115,18 @@ class GridIcon(QVBoxLayout):
         self.bt_factory.setFixedSize(32, 32)
         self.bt_factory.setIconSize(QSize(32, 32))
         self.bt_factory.clicked.connect(self.onClickFactory)
-        self.grid = QGridLayout()
         
         hbox = QHBoxLayout()
         hbox.addWidget(self.bt_item)
         hbox.addWidget(self.bt_recipe)
         hbox.addWidget(self.bt_factory)
         self.addLayout(hbox)
-        self.addLayout(self.grid)
-        self.addStretch(1)
         
         self.elem = None
         
         self.resetInfo()
         
     def resetInfo(self):
-        for i in reversed(range(self.grid.count())): 
-            self.grid.itemAt(i).widget().setParent(None)
-
         pixmap = common_func.getCommonPixmap('factorio')
         self.bt_item.setIcon(QIcon(pixmap))
         self.bt_item.setToolTip('')
@@ -143,47 +137,6 @@ class GridIcon(QVBoxLayout):
         self.elem = None
         self.setEnabled(False)
         
-    def setInfoGridIcon(self, elem):
-        self.resetInfo()
-        self.elem = elem
-        
-        if type(elem) == elem_manager.ElemGroup:
-            if elem.item_goal is not None:
-                self.bt_item.setIcon(elem.item_goal.getIcon())
-                self.bt_item.setToolTip(elem.item_goal.getName())
-            else:
-                self.bt_item.setIcon(QIcon(common_func.getCommonPixmap('factorio')))
-            self.bt_recipe.setIcon(QIcon(common_func.getCommonPixmap('factorio')))
-            self.bt_factory.setIcon(QIcon(common_func.getCommonPixmap('factorio')))
-            self.setEnabled(True, True)
-            return
-        self.bt_item.setIcon(elem.item_goal.getIcon())
-        self.bt_item.setToolTip(elem.item_goal.getName())
-        self.bt_recipe.setIcon(elem.recipe.getIcon())
-        self.bt_recipe.setToolTip(getRecipeToolTipText(elem.recipe))
-        if elem.factory is not None:
-            self.bt_factory.setIcon(elem.factory.getIcon())
-            self.bt_factory.setToolTip(getFactoryToolTipText(elem.factory))
-        
-        map_module = dict()
-        for module in elem.list_module:
-            if map_module.get(module) is None:
-                map_module[module] = 0
-            map_module[module] += 1
-        
-        i = 0
-        for key in map_module:
-            num = map_module[key]
-            module = item_manager.map_item[key]
-            x = i % 2 * 2
-            y = i / 2
-            label1 = QLabel()
-            label1.setPixmap(module.getPixmap(16, 16))
-            label2 = QLabel('x' + str(num))
-            self.grid.addWidget(label1, y, x)
-            self.grid.addWidget(label2, y, x+1)
-            i += 1
-        self.setEnabled(True)
             
     def onClickItem(self):
         dlg = ChangePopup(item_manager.getSortedItemList(), 'item')
