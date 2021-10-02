@@ -110,7 +110,10 @@ class Elem:
             
     def deleteElem(self):
         delElemId(self.id)
+        self.group.list_child.remove(self)
         
+        # 현재 링크는 없으니 일단 제거
+        '''
         for key in self.map_product:
             product = self.map_product[key]
             list_link = product.list_link
@@ -124,8 +127,8 @@ class Elem:
             for link in list_link:
                 link.deleteLink()
             del list_link
-        
-        self.deleteElemSub()
+        '''
+        #self.deleteElemSub()
 
     def connectProduct(self, consumer, name_product, ratio = 1):
         if self    .map_product .get(name_product) is None :

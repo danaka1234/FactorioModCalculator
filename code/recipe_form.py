@@ -123,6 +123,12 @@ class EditWidget(QWidget):
         grid_info.addWidget(self.edit_factories , 4, 1)
         grid_info.addWidget(self.edit_beacon    , 5, 1)
         
+        grid_info_bt = QGridLayout()
+        bt_delete = QPushButton('Delete')
+        bt_delete.clicked.connect(self.onClickDelete)
+        grid_info_bt.addWidget(bt_delete        , 0, 0)
+        grid_info.addLayout(grid_info_bt        , 6, 0, 1, 2)
+        
         grid_info.setRowStretch(7, 1)
         grid_info.setColumnStretch(2, 1)
         
@@ -257,6 +263,11 @@ class EditWidget(QWidget):
         self.elem.changeBeaconNum(num_beacon)
         self.tree_widget.updateItem(self.elem)
         self.setElem(self.elem, bUpdateItem=True)
+        
+    def onClickDelete(self):
+        self.elem.deleteElem()
+        self.tree_widget.elem_group.updateGroupInOut()
+        self.tree_widget.rebuildTree()
         
 class GridModule(QGridLayout):
     def __init__(self, parent):
