@@ -197,7 +197,8 @@ class Elem:
                 num_recipe = output[1]
                 break
         goal = self.num_goal
-        time = time_recipe / ( self.factory.crafting_speed * ( 1 + self.speed ) * ( 1 + self.beacon/100 ) )
+        speed = self.factory.crafting_speed * ( 1 + self.speed ) * ( 1 + self.beacon/100 )
+        time = time_recipe / speed
         production = num_recipe * ( 1 + self.productivity )
         
         '''
@@ -352,18 +353,24 @@ class ElemFactory(Elem):
         self.bFacNumBase = False
         self.updateElem(all=True)
         
+    def changeBeaconNum(self, num_beacon):
+        self.beacon = num_beacon
+        self.updateElem(all=True)
+        
     def updateGoalByFacNum(self):
         num_recipe = 1  # 레시피 1회당 생산
         for output in self.recipe.getListProduct():
             if output[0] == self.item_goal.name:
                 num_recipe = output[1]
                 break
+                
+        # 속도 = 공장속도 * 보너스 * 비컨 보너스
+        speed = self.factory.crafting_speed * (1 + self.speed) * (1 + self.beacon / 100)
         
-        # 생산 = 회당 생산 * 공장수 * 공장속도 * 생산 보너스 / 레시피 시간
+        # 생산 = 회당 생산 * 공장수 * 속도 * 생산 보너스 / 레시피 시간
         self.num_goal = \
             num_recipe * self.num_factory * \
-            self.factory.crafting_speed * (1 + self.speed) * \
-            (1 + self.productivity) / \
+            speed * (1 + self.productivity) / \
             self.recipe.getTime()
         
     def changeModule(self, list_module, bFillFirst=False):

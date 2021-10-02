@@ -74,7 +74,7 @@ class EditWidget(QWidget):
         self.setLayout(grid1)
         
         grid_info = QGridLayout()
-        grid1.addLayout(grid_info, 0, 0, 1, 1)
+        grid1.addLayout(grid_info, 0, 0)
         
         group_material = QGroupBox('Ingredients')
         group_product  = QGroupBox('Results')
@@ -116,6 +116,7 @@ class EditWidget(QWidget):
         self.edit_beacon = QLineEdit()
         self.edit_beacon.setFixedWidth(80)
         self.edit_beacon.setValidator(QDoubleValidator())
+        self.edit_beacon.editingFinished.connect(self.onBeaconChagned)
         grid_info.addWidget(self.edit_name      , 1, 1)
         grid_info.addWidget(self.label_id       , 2, 1)
         grid_info.addWidget(self.edit_goal      , 3, 1)
@@ -123,6 +124,7 @@ class EditWidget(QWidget):
         grid_info.addWidget(self.edit_beacon    , 5, 1)
         
         grid_info.setRowStretch(7, 1)
+        grid_info.setColumnStretch(2, 1)
         
         #------------------------- group material product
         self.grid_mat = QGridLayout()
@@ -201,7 +203,7 @@ class EditWidget(QWidget):
         self.edit_factories.setText(common_func.getAmountRound(elem.num_factory))
         self.set_matearial_product()
         
-        #self.grid_icon.setInfoGridIcon(elem)
+        self.grid_icon.setInfoGridIcon(elem)
         
         #그룹 전용
         if type(elem) != elem_manager.ElemFactory:
@@ -245,6 +247,14 @@ class EditWidget(QWidget):
             return
         facNum = float(self.edit_factories.text())
         self.elem.changeFacNum(facNum)
+        self.tree_widget.updateItem(self.elem)
+        self.setElem(self.elem, bUpdateItem=True)
+        
+    def onBeaconChagned(self):
+        if self.elem is None:
+            return
+        num_beacon = float(self.edit_beacon.text())
+        self.elem.changeBeaconNum(num_beacon)
         self.tree_widget.updateItem(self.elem)
         self.setElem(self.elem, bUpdateItem=True)
         
@@ -339,23 +349,11 @@ class GridModule(QGridLayout):
             self.bt_fill.setEnabled(False)
         
     def onClickFillModule(self):
-        '''
-        if len(self.list_cb) == 0:
-            return
-        index = self.list_cb[0]
-        for i in range(len(self.list_cb)):
-            if i == 0: continue
-            cb = self.list_cb[i]
-            cb.setCurrentIndex(i)
-        
-        #set module
-        elem = elem_manager.map_elem[self.id_elem]
-        module = item_manager.getModuleListWithRecipe(self.name_recipe)[i]
-        elem.list_module = [module.name] * elem.num_module
-        
-        self.updateModule()
-        '''
-        pass
+        elem = self.edit_widget.elem
+        list_module = [self.list_bt[0].module]
+        elem.changeModule(list_module, bFillFirst=True)
+        self.edit_widget.setElem(elem)
+        self.edit_widget.tree_widget.updateItem(elem)
         
     def onClickItem(self):
         elem = self.edit_widget.elem

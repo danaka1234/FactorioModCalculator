@@ -126,6 +126,30 @@ class GridIcon(QVBoxLayout):
         
         self.resetInfo()
         
+    def setInfoGridIcon(self, elem):
+        self.resetInfo()
+        self.elem = elem
+        
+        if type(elem) == elem_manager.ElemGroup:
+            if elem.item_goal is not None:
+                self.bt_item.setIcon(elem.item_goal.getIcon())
+                self.bt_item.setToolTip(elem.item_goal.getName())
+            else:
+                self.bt_item.setIcon(QIcon(common_func.getCommonPixmap('factorio')))
+            self.bt_recipe.setIcon(QIcon(common_func.getCommonPixmap('factorio')))
+            self.bt_factory.setIcon(QIcon(common_func.getCommonPixmap('factorio')))
+            self.setEnabled(True, True)
+            return
+        self.bt_item.setIcon(elem.item_goal.getIcon())
+        self.bt_item.setToolTip(elem.item_goal.getName())
+        self.bt_recipe.setIcon(elem.recipe.getIcon())
+        self.bt_recipe.setToolTip(getRecipeToolTipText(elem.recipe))
+        if elem.factory is not None:
+            self.bt_factory.setIcon(elem.factory.getIcon())
+            self.bt_factory.setToolTip(getFactoryToolTipText(elem.factory))
+            
+        self.setEnabled(True)
+        
     def resetInfo(self):
         pixmap = common_func.getCommonPixmap('factorio')
         self.bt_item.setIcon(QIcon(pixmap))
