@@ -92,8 +92,43 @@ def getFactoryToolTipText(factory):
         
     return str_ret
     
-def getModuleToolTipText(module):
-    return 'module'
+def getModuleTextSub(num, str_name):
+    if num == 0: return ''
+    str_sub = ''
+    if num > 0: str_sub = '+'
+    return '<tr><td>' + str_name + '</td><td>: ' + str_sub + str(num*100) + '%</td></tr>'
+    
+def getModuleToolTipText(item):
+    module = item_manager.map_module[item.name]
+    name = module.getName()
+    num_speed   = 0
+    num_prob    = 0
+    num_consume = 0
+    num_poll    = 0
+    
+    for key in module.effect.keys():
+        value = module.effect[key]['bonus']
+        if key == 'speed':
+            num_speed   += value
+        elif key == 'productivity':
+            num_prob    += value
+        elif key == 'consumption':
+            num_consume += value
+        elif key == 'pollution':
+            num_poll    += value
+    
+    str_ret =   '<style>.td_m {vertical-align:top}</style>'+\
+        name +\
+        '<table>' 
+        
+    str_ret += getModuleTextSub(num_speed   , 'Speed')
+    str_ret += getModuleTextSub(num_prob    , 'Productivity')
+    str_ret += getModuleTextSub(num_consume , 'Consumption')
+    str_ret += getModuleTextSub(num_poll    , 'Pollution')
+    
+    str_ret += '</table>'
+        
+    return str_ret
 
 class GridIcon(QVBoxLayout):
     def __init__(self, parent):

@@ -16,6 +16,8 @@ from PyQt5.QtCore       import QSize
 import item_manager, elem_manager, config_manager
 import recipe_form, common_func
 
+import math
+
 head_id = 2
 
 class GroupTreeWidget(QTreeWidget):
@@ -140,6 +142,45 @@ class ElemTreeItem(QTreeWidgetItem):
             
         self.update()
         
+    def makeListIcon(self, grid, map, iconSize):
+        bBig = (iconSize >= 32)
+        list_key = list(map.keys())
+        column_max = 3
+        if bBig:
+            column_max = 5
+        for i in range(0, len(list_key)):
+            key = list_key[i]
+            elemSub = map[key]
+            num = 0
+            if type(elemSub) == elem_manager.ElemMaterial:
+                num = elemSub.num_need
+            elif type(elemSub) == elem_manager.ElemProduct:
+                num = elemSub.num_real
+            item = item_manager.map_item[key]
+            
+            text = common_func.getAmountPerTime(num)
+            label1 = QLabel()
+            label1.setPixmap(item.getPixmap(iconSize, iconSize))
+            label2 = QLabel(text)
+            if bBig:
+                y = int(i/column_max) * 2 + 1
+                x = i % column_max
+                grid.addWidget(label1, y, x)
+                grid.addWidget(label2, y+1, x)
+            else:
+                y = int(i/column_max)+ 1
+                x = i % column_max * 2
+                grid.addWidget(label1, y, x)
+                grid.addWidget(label2, y, x+1)
+                
+        grid.setRowStretch(0,1)
+        if bBig:
+            grid.setRowStretch(math.ceil(len(list_key)/column_max)*2+1,1)
+            grid.setColumnStretch(column_max+1,1)
+        else:
+            grid.setRowStretch(math.ceil(len(list_key)/column_max)+1,1)
+            grid.setColumnStretch(column_max*2+1,1)
+            
     def update(self):
         elem = self.elem
         iconSize = 32
@@ -156,34 +197,12 @@ class ElemTreeItem(QTreeWidgetItem):
         widget_material = QWidget()
         grid_material = QGridLayout()
         widget_material.setLayout(grid_material)
-        list_key = list(elem.map_material.keys())
-        for i in range(0, len(list_key)):
-            key = list_key[i]
-            material = elem.map_material[key]
-            item = item_manager.map_item[key]
-            
-            text = common_func.getAmountPerTime(material.num_need)
-            label1 = QLabel()
-            label1.setPixmap(item.getPixmap(iconSize, iconSize))
-            label2 = QLabel(text)
-            grid_material.addWidget(label1, i, 0)
-            grid_material.addWidget(label2, i, 1)
+        self.makeListIcon(grid_material, elem.map_material, iconSize)
         
         widget_product = QWidget()
         grid_product = QGridLayout()
         widget_product.setLayout(grid_product)
-        list_key = list(elem.map_product.keys())
-        for i in range(0, len(list_key)):
-            key = list_key[i]
-            product = elem.map_product[key]
-            item = item_manager.map_item[key]
-            
-            text = common_func.getAmountPerTime(product.num_real)
-            label1 = QLabel()
-            label1.setPixmap(item.getPixmap(iconSize, iconSize))
-            label2 = QLabel(text)
-            grid_product.addWidget(label1, i, 0)
-            grid_product.addWidget(label2, i, 1)
+        self.makeListIcon(grid_product, elem.map_product, iconSize)
         
         #Factory
         widget_factory = QWidget()

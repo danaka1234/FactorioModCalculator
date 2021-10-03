@@ -109,6 +109,8 @@ class Elem:
         return self.id < other.id
             
     def deleteElem(self):
+        if self.group is None:
+            return
         delElemId(self.id)
         self.group.list_child.remove(self)
         
@@ -419,10 +421,14 @@ class ElemFactory(Elem):
             if all or inout:
                 self.updateInOut()
             
-        self.emission = self.factory.energy_source_emissions * self.num_factory * (1 + self.pollution)
-        self.energy = \
-            self.num_factory * self.factory.energy_usage * (1 + self.consumption) \
-            + math.ceil(self.num_factory) * self.factory.drain
+        if self.factory is not None:
+            self.emission = self.factory.energy_source_emissions * self.num_factory * (1 + self.pollution)
+            self.energy = \
+                self.num_factory * self.factory.energy_usage * (1 + self.consumption) \
+                + math.ceil(self.num_factory) * self.factory.drain
+        else:
+            self.emission = 0
+            self.energy = 0
             
         if all or group:
             self.group.updateGroupInOut()

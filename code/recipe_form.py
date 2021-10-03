@@ -343,7 +343,7 @@ class GridModule(QGridLayout):
                 module = item_manager.map_item[name_module]
                 bt.module = name_module
                 bt.setIcon(module.getIcon())
-                bt.setToolTip(module.name)
+                bt.setToolTip(common_class.getModuleToolTipText(module))
             self.list_bt.append(bt)
             self.grid_btn.addWidget(bt, y, x)
             x += 1
@@ -400,6 +400,7 @@ def init_grid_item_list(grid, list_item):
         
         label_icon = QLabel()
         label_icon.setPixmap(item.getPixmap(iconSize, iconSize))
+        label_icon.setToolTip(item.getName())
         
         str_num = common_func.getAmountPerTime(elem[1])
         
