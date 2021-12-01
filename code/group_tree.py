@@ -14,7 +14,7 @@ from PyQt5.QtGui        import QIcon, QPixmap
 from PyQt5.QtCore       import QSize
 
 import item_manager, elem_manager, config_manager
-import recipe_form, common_func
+import recipe_form, common_func, option_widget
 
 import math
 
@@ -183,7 +183,7 @@ class ElemTreeItem(QTreeWidgetItem):
             
     def update(self):
         elem = self.elem
-        iconSize = 32
+        iconSize = option_widget.iconSize
         
         widget_icon = QLabel()
         if type(elem) == elem_manager.ElemFactory and elem.recipe is not None:
@@ -210,12 +210,12 @@ class ElemTreeItem(QTreeWidgetItem):
         widget_factory.setLayout(grid_factory)
         label1 = QLabel()
         if type(elem) == elem_manager.ElemGroup:
-            label1.setPixmap(common_func.getCommonPixmap('factorio'))
+            label1.setPixmap(common_func.getCommonPixmap('factorio', iconSize, iconSize))
         else:
             if elem.factory is not None:
-                label1.setPixmap(elem.factory.getPixmap())
+                label1.setPixmap(elem.factory.getPixmap(iconSize, iconSize))
             else:
-                label1.setPixmap(common_func.getCommonPixmap('factorio'))
+                label1.setPixmap(common_func.getCommonPixmap('factorio', iconSize, iconSize))
             
         str_factory_num = common_func.getAmountRound(elem.num_factory)
         label2 = QLabel(str_factory_num)

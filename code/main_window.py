@@ -12,7 +12,8 @@ from PyQt5.QtWidgets    import QMainWindow, QApplication, QDesktopWidget
 from PyQt5.QtWidgets    import QWidget, QTabWidget, QGridLayout, QCheckBox, QComboBox
 
 import config_manager
-import open_dialog, loading_widget, t2_modify, template_manager, elem_manager, item_manager
+import open_dialog, template_manager, elem_manager, item_manager
+import loading_widget, t2_modify, option_widget
 
 class MainWindow(QMainWindow):
     '''
@@ -32,7 +33,9 @@ class MainWindow(QMainWindow):
     def initUI(self):
         self.title = config_manager.name_app
         self.setWindowTitle(self.title)
-        self.setGeometry(300, 100, 1000, 600)
+        w = int(config_manager.get_config('ui', 'window_width'))
+        h = int(config_manager.get_config('ui', 'window_height'))
+        self.setGeometry(0, 0, w, h)
         
         # set windows center
         self.moveWindowCenter()
@@ -90,9 +93,11 @@ class MainWindow(QMainWindow):
             self.load_widget.setMsg('Don\'t load', False)
             
     def setTabWidget(self):
+        self.tab_widget = QTabWidget()
         self.main_widget = t2_modify.ModifyWidget()
-        self.setCentralWidget(self.main_widget)
-        self.main_widget.show()
+        self.tab_widget.addTab(self.main_widget, 'Tree View')
+        self.tab_widget.addTab(option_widget.OptionWidget(), 'Option')
+        self.setCentralWidget(self.tab_widget)
         
     '''
     def checkAutoUpdate(self):

@@ -13,7 +13,7 @@ from PyQt5.QtGui       import QPixmap, QIcon
 
 #layout
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout
-from PyQt5.QtWidgets import QCheckBox, QLabel, QLineEdit, QGroupBox, QComboBox
+from PyQt5.QtWidgets import QCheckBox, QLabel, QLineEdit, QGroupBox
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QPushButton, QMessageBox
 from PyQt5.QtGui     import QDoubleValidator, QIntValidator
 #https://www.delftstack.com/tutorial/pyqt5/pyqt-grid-layout/
@@ -31,34 +31,32 @@ init label_icon image https://pythonspot.com/pyqt5-image/
 import elem_manager, item_manager, common_func, common_class, group_tree, config_manager
 
 class EditWidgetRapper(QGridLayout):
-    def __init__(self, bCreateTab = False):
+    def __init__(self, bCreateTab = False, modifyWidget = None):
         self.bCreateTab = bCreateTab
+        self.modifyWidget = modifyWidget
 
         super().__init__()
         self.initUI()
         
     def initUI(self):
-        self.bt_hide = QPushButton('Hide')
-        self.bt_hide.setMaximumWidth(50)
-        self.bt_hide.clicked.connect(self.toggleRecipeWidget)
-        
-        tab_widget = QTabWidget()
         self.edit_widget = EditWidget(bCreateTab = self.bCreateTab)
         self.tree_widget = group_tree.GroupTreeWidget(self.edit_widget, bCreateTab = self.bCreateTab)
         self.edit_widget.tree_widget = self.tree_widget
-        tab_widget.addTab(self.tree_widget, 'Tree view')
         
-        self.addWidget(tab_widget, 0, 0, 2, 1)
-        self.addWidget(self.bt_hide, 0, 2)
-        self.addWidget(self.edit_widget, 1, 1, 1, 2)
+        self.addWidget(self.tree_widget, 0, 0, 2, 1)
+        self.addWidget(self.edit_widget, 0, 1, 1, 2)
         self.setRowStretch(1, 1)
         
     def toggleRecipeWidget(self):
         if self.edit_widget.isVisible():
-            self.bt_hide.setText("show")
+            #self.bt_hide.setText("show")
+            if self.modifyWidget is not None:
+                self.modifyWidget.bt_hide.setText("show")
             self.edit_widget.hide()
         else:
-            self.bt_hide.setText("hide")
+            #self.bt_hide.setText("hide")
+            if self.modifyWidget is not None:
+                self.modifyWidget.bt_hide.setText("hide")
             self.edit_widget.show()
 
 class EditWidget(QWidget):

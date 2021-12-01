@@ -15,7 +15,7 @@ class ModifyWidget(QWidget):
     def initUI(self):
         vbox = QVBoxLayout()
         grid = QGridLayout()
-        grid_bottom = recipe_form.EditWidgetRapper(bCreateTab = True)
+        grid_bottom = recipe_form.EditWidgetRapper(True, self)
         vbox.addLayout(grid)
         vbox.addLayout(grid_bottom)
         
@@ -26,9 +26,12 @@ class ModifyWidget(QWidget):
         
         self.bt_addGroup = QPushButton('Add Group')
         self.bt_addFactory = QPushButton('Add Factory')
-        grid.addWidget(self.bt_addGroup,   0, 4)
+        grid.addWidget(self.bt_addGroup,    0, 4)
         grid.addWidget(self.bt_addFactory,  0, 5)
         grid.setColumnStretch(6,1)
+        self.bt_hide = QPushButton('Hide')
+        self.bt_hide.setMaximumWidth(50)
+        grid.addWidget(self.bt_hide,        0, 7)
         
         self.label_group = QLabel('None(0)')
         grid.addWidget(QLabel('Current Group')  , 0, 0)
@@ -39,6 +42,7 @@ class ModifyWidget(QWidget):
         
         self.bt_addGroup.clicked.connect(self.tree_widget.addGroup)
         self.bt_addFactory.clicked.connect(self.tree_widget.addFactory)
+        self.bt_hide.clicked.connect(grid_bottom.toggleRecipeWidget)
         
         self.setLayout(vbox)
         
