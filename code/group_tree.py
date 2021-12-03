@@ -51,11 +51,9 @@ class GroupTreeWidget(QTreeWidget):
             "Factory", "Module", "Etc"]
         self.setHeaderLabels(list_header)
         
-        for idx in range(self.columnCount()):
-            if idx == 0: continue
-            self.resizeColumnToContents(idx)
         size = QSize(96,32)
         self.headerItem().setSizeHint(0, size)
+        self.resizeAll()
         
     def onItemChanged(self, current, previous):
         item = current
@@ -92,9 +90,7 @@ class GroupTreeWidget(QTreeWidget):
             ElemTreeItem(self, elem, item_group)
             
         self.expandAll ()
-        for idx in range(self.columnCount()):
-            if idx == 0: continue
-            self.resizeColumnToContents(idx)
+        self.resizeAll()
         
     def updateItem(self, elem, bUpdateGroup = True):
         item_group = self.topLevelItem(0)
@@ -106,6 +102,7 @@ class GroupTreeWidget(QTreeWidget):
             child.update()
         if bUpdateGroup:
             item_group.update()
+        self.resizeAll()
     
     def createButtonItem(self, icon, text):
         item_tree = QTreeWidgetItem()
@@ -130,6 +127,10 @@ class GroupTreeWidget(QTreeWidget):
         #생성된 아이템 고르기
         edit_widget.edit_widget.setElem(elem)
         self.topLevelItem(0).update()
+        
+    def resizeAll(self):
+        for idx in range(self.columnCount()):
+            self.resizeColumnToContents(idx)
         
 # 트리용 아이템
 class ElemTreeItem(QTreeWidgetItem):
