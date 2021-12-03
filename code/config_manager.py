@@ -45,6 +45,8 @@ time_config = 1
 time_set = [1, 60, 3600]
 time_name = ['s', 'm', 'h']
 
+iconSize = 16
+
 name_app = 'Factorio Mod Calculator'
     
 def save_config(config):

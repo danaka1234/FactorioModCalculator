@@ -14,11 +14,13 @@ from PyQt5.QtGui        import QIcon, QPixmap
 from PyQt5.QtCore       import QSize
 
 import item_manager, elem_manager, config_manager
-import recipe_form, common_func, option_widget
+import recipe_form, common_func
 
 import math
 
 head_id = 2
+
+tree_widget = None
 
 class GroupTreeWidget(QTreeWidget):
     def __init__(self, edit_widget, bCreateTab):
@@ -28,6 +30,9 @@ class GroupTreeWidget(QTreeWidget):
         self.initUI()
         
         self.elem_group = None
+        
+        global tree_widget
+        tree_widget = self
         
     def initUI(self):
         #self.setRootIsDecorated(False)      #루트노드 화살표 안보이게
@@ -183,7 +188,7 @@ class ElemTreeItem(QTreeWidgetItem):
             
     def update(self):
         elem = self.elem
-        iconSize = option_widget.iconSize
+        iconSize = config_manager.iconSize
         
         widget_icon = QLabel()
         if type(elem) == elem_manager.ElemFactory and elem.recipe is not None:
