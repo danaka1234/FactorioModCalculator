@@ -4,6 +4,8 @@ from PyQt5.QtWidgets    import QPushButton, QLabel
 
 import group_tree, recipe_form, elem_manager
 
+modify_widget = None
+
 class ModifyWidget(QWidget):
     def __init__(self):
         self.group = elem_manager.map_elem[0]
@@ -11,13 +13,16 @@ class ModifyWidget(QWidget):
         super().__init__()
         self.initUI()
         self.setGroup(self.group)
+        
+        global modify_widget
+        modify_widget = self
     
     def initUI(self):
         vbox = QVBoxLayout()
         grid = QGridLayout()
-        grid_bottom = recipe_form.EditWidgetRapper(True, self)
+        edit_widget_rapper = recipe_form.EditWidgetRapper()
         vbox.addLayout(grid)
-        vbox.addLayout(grid_bottom)
+        vbox.addLayout(edit_widget_rapper)
         
         self.bt_goOut = QPushButton('Go out')
         self.bt_goInto = QPushButton('Go into')
@@ -29,20 +34,17 @@ class ModifyWidget(QWidget):
         grid.addWidget(self.bt_addGroup,    0, 4)
         grid.addWidget(self.bt_addFactory,  0, 5)
         grid.setColumnStretch(6,1)
-        self.bt_hide = QPushButton('Hide')
-        self.bt_hide.setMaximumWidth(50)
-        grid.addWidget(self.bt_hide,        0, 7)
+        self.bt_edit = QPushButton('Hide')
+        self.bt_edit.setMaximumWidth(50)
+        grid.addWidget(self.bt_edit,        0, 7)
         
         self.label_group = QLabel('None(0)')
         grid.addWidget(QLabel('Current Group')  , 0, 0)
         grid.addWidget(self.label_group         , 0, 1)
-    
-        self.edit_widget = grid_bottom.edit_widget
-        self.tree_widget = grid_bottom.tree_widget
         
-        self.bt_addGroup.clicked.connect(self.tree_widget.addGroup)
-        self.bt_addFactory.clicked.connect(self.tree_widget.addFactory)
-        self.bt_hide.clicked.connect(grid_bottom.toggleRecipeWidget)
+        self.bt_addGroup.clicked.connect(group_tree.tree_widget.addGroup)
+        self.bt_addFactory.clicked.connect(group_tree.tree_widget.addFactory)
+        self.bt_edit.clicked.connect(edit_widget_rapper.toggleRecipeWidget)
         
         self.setLayout(vbox)
         
@@ -51,5 +53,5 @@ class ModifyWidget(QWidget):
         text = group.name + '(' + str(group.id) + ')'
         self.label_group.setText(text)
         self.bt_goOut.setEnabled(group.id != 0)
-        self.tree_widget.setTreeRootGroup(group)
+        group_tree.tree_widget.setTreeRootGroup(group)
             

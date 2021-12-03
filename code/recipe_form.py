@@ -29,43 +29,46 @@ init label_icon image https://pythonspot.com/pyqt5-image/
 '''
 
 import elem_manager, item_manager, common_func, common_class, group_tree, config_manager
+import t2_modify
+
+edit_widget = None
+edit_widget_rapper = None
 
 class EditWidgetRapper(QGridLayout):
-    def __init__(self, bCreateTab = False, modifyWidget = None):
-        self.bCreateTab = bCreateTab
-        self.modifyWidget = modifyWidget
-
+    def __init__(self):
         super().__init__()
         self.initUI()
         
-    def initUI(self):
-        self.edit_widget = EditWidget(bCreateTab = self.bCreateTab)
-        self.tree_widget = group_tree.GroupTreeWidget(self.edit_widget, bCreateTab = self.bCreateTab)
-        self.edit_widget.tree_widget = self.tree_widget
+        global edit_widget_rapper
+        edit_widget_rapper = self
         
-        self.addWidget(self.tree_widget, 0, 0, 2, 1)
-        self.addWidget(self.edit_widget, 0, 1, 1, 2)
+    def initUI(self):
+        edit_widget = EditWidget()
+        tree_widget = group_tree.GroupTreeWidget()
+        
+        self.addWidget(tree_widget, 0, 0, 2, 1)
+        self.addWidget(edit_widget, 0, 1, 1, 2)
         self.setRowStretch(1, 1)
         
     def toggleRecipeWidget(self):
-        if self.edit_widget.isVisible():
-            #self.bt_hide.setText("show")
-            if self.modifyWidget is not None:
-                self.modifyWidget.bt_hide.setText("show")
-            self.edit_widget.hide()
+        global edit_widget
+        if edit_widget.isVisible():
+            if t2_modify.modify_widget is not None:
+                t2_modify.modify_widget.bt_edit.setText("show")
+            edit_widget.hide()
         else:
-            #self.bt_hide.setText("hide")
-            if self.modifyWidget is not None:
-                self.modifyWidget.bt_hide.setText("hide")
-            self.edit_widget.show()
+            if t2_modify.modify_widget is not None:
+                t2_modify.modify_widget.bt_edit.setText("hide")
+            edit_widget.show()
 
 class EditWidget(QWidget):
-    def __init__(self, bCreateTab = False):
+    def __init__(self):
         super().__init__()
         self.elem = None
-        self.tree_widget = None
-        self.bCreateTab = bCreateTab
         self.initUI()
+        
+        global edit_widget
+        edit_widget = self
         
     def initUI(self):
         grid1 = QGridLayout()
@@ -90,7 +93,7 @@ class EditWidget(QWidget):
         grid1.setColumnStretch(1, 1)
         
         #------------------------- grid_info
-        self.grid_icon = common_class.GridIcon(self)
+        self.grid_icon = common_class.GridIcon()
         grid_info.addLayout(self.grid_icon, 0, 0, 1, 2)
         
         grid_info.addWidget(QLabel('Name')      , 1, 0)
@@ -225,7 +228,7 @@ class EditWidget(QWidget):
             # TODO : 링크 있으면 링크 업뎃...
             
             # 아이템 업뎃
-            self.tree_widget.updateItem(elem)
+            group_tree.tree_widget.updateItem(elem)
             
     def onNameChanged(self):
         if self.elem is None:
@@ -235,7 +238,7 @@ class EditWidget(QWidget):
             self.elem.name \
                 = str(type(self.elem).__name__)[4:] + ' ' + str(self.elem.id)
             self.edit_name.setText(self.elem.name)
-        self.tree_widget.updateItem(self.elem)
+        group_tree.tree_widget.updateItem(self.elem)
         
     def onGoalChanged(self):
         if self.elem is None:
@@ -243,7 +246,7 @@ class EditWidget(QWidget):
         time = config_manager.time_set[config_manager.time_config]
         goal = float(self.edit_goal.text()) / time
         self.elem.changeGoal(goal)
-        self.tree_widget.updateItem(self.elem)
+        group_tree.tree_widget.updateItem(self.elem)
         self.setElem(self.elem, bUpdateItem=True)
         
     def onFacNumChanged(self):
@@ -251,7 +254,7 @@ class EditWidget(QWidget):
             return
         facNum = float(self.edit_factories.text())
         self.elem.changeFacNum(facNum)
-        self.tree_widget.updateItem(self.elem)
+        group_tree.tree_widget.updateItem(self.elem)
         self.setElem(self.elem, bUpdateItem=True)
         
     def onBeaconChagned(self):
@@ -259,13 +262,13 @@ class EditWidget(QWidget):
             return
         num_beacon = float(self.edit_beacon.text())
         self.elem.changeBeaconNum(num_beacon)
-        self.tree_widget.updateItem(self.elem)
+        group_tree.tree_widget.updateItem(self.elem)
         self.setElem(self.elem, bUpdateItem=True)
         
     def onClickDelete(self):
         self.elem.deleteElem()
-        self.tree_widget.elem_group.updateGroupInOut()
-        self.tree_widget.rebuildTree()
+        group_tree.tree_widget.elem_group.updateGroupInOut()
+        group_tree.tree_widget.rebuildTree()
         
 class GridModule(QGridLayout):
     def __init__(self, parent):
@@ -358,13 +361,16 @@ class GridModule(QGridLayout):
             self.bt_fill.setEnabled(False)
         
     def onClickFillModule(self):
-        elem = self.edit_widget.elem
+        global edit_widget
+        elem = edit_widget.elem
         list_module = [self.list_bt[0].module]
         elem.changeModule(list_module, bFillFirst=True)
-        self.edit_widget.setElem(elem)
-        self.edit_widget.tree_widget.updateItem(elem)
+        edit_widget.setElem(elem)
+        group_tree.tree_widget.updateItem(elem)
         
     def onClickItem(self):
+        global edit_widget
+        
         elem = self.edit_widget.elem
         if type(elem) != elem_manager.ElemFactory:
             return
@@ -384,8 +390,8 @@ class GridModule(QGridLayout):
                 if bt.module != None:
                     list_module.append(bt.module)
             elem.changeModule(list_module)
-            self.edit_widget.setElem(elem)
-            self.edit_widget.tree_widget.updateItem(elem)
+            edit_widget.setElem(elem)
+            group_tree.tree_widget.updateItem(elem)
             
 def init_grid_item_list(grid, list_item):
     for i in reversed(range(grid.count())): 

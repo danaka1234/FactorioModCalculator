@@ -7,7 +7,7 @@ from PyQt5.QtWidgets    import QPushButton, QLabel, QScrollArea
 from PyQt5.QtWidgets    import QVBoxLayout, QHBoxLayout, QGridLayout
 from PyQt5.QtWidgets    import QWidget, QDialog
 
-import elem_manager, item_manager, common_func
+import elem_manager, item_manager, common_func, recipe_form
 
 #QTooltip : html 문법으로 추정됨
 #테이블 세로 중앙
@@ -131,9 +131,7 @@ def getModuleToolTipText(item):
     return str_ret
 
 class GridIcon(QVBoxLayout):
-    def __init__(self, parent):
-        self.edit_widget = parent
-        
+    def __init__(self):
         super().__init__()
         self.initUI()
         
@@ -202,8 +200,8 @@ class GridIcon(QVBoxLayout):
         ret = dlg.exec_()
         if ret == 1:
             item = item_manager.map_item[dlg.selected]
-            self.edit_widget.elem.changeItem(item)
-            self.edit_widget.setElem(self.edit_widget.elem, True)
+            recipe_form.edit_widget.elem.changeItem(item)
+            recipe_form.edit_widget.setElem(recipe_form.edit_widget.elem, True)
         
     def onClickRecipe(self):
         if self.elem is None or self.elem.item_goal is None:
@@ -222,8 +220,8 @@ class GridIcon(QVBoxLayout):
             if dlg.selected == self.elem.recipe.name:
                 return
             recipe = item_manager.map_recipe[dlg.selected]
-            self.edit_widget.elem.changeRecipe(recipe, bItemChange=False)
-            self.edit_widget.setElem(self.edit_widget.elem, True)
+            recipe_form.edit_widget.elem.changeRecipe(recipe, bItemChange=False)
+            recipe_form.edit_widget.setElem(recipe_form.edit_widget.elem, True)
         
     def onClickFactory(self):
         if self.elem is None or self.elem.item_goal is None:
@@ -237,9 +235,9 @@ class GridIcon(QVBoxLayout):
             if dlg.selected == self.elem.factory.name:
                 return
             factory = item_manager.map_factory[dlg.selected]
-            self.edit_widget.elem.changeFactory(factory)
-            self.edit_widget.setElem(self.elem, True)
-            self.edit_widget.tree_widget.updateItem(self.elem)
+            recipe_form.edit_widget.elem.changeFactory(factory)
+            recipe_form.edit_widget.setElem(self.elem, True)
+            recipe_form.edit_widget.tree_widget.updateItem(self.elem)
         
     def setEnabled(self, bEnable, bGroup = False):
         if bEnable:

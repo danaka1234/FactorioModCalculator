@@ -23,15 +23,14 @@ head_id = 2
 tree_widget = None
 
 class GroupTreeWidget(QTreeWidget):
-    def __init__(self, edit_widget, bCreateTab):
+    def __init__(self):
+        global tree_widget
+        
         super().__init__()
-        self.bCreateTab = bCreateTab
-        self.edit_widget = edit_widget
         self.initUI()
         
         self.elem_group = None
         
-        global tree_widget
         tree_widget = self
         
     def initUI(self):
@@ -61,12 +60,12 @@ class GroupTreeWidget(QTreeWidget):
     def onItemChanged(self, current, previous):
         item = current
         if item is None:
-            self.edit_widget.resetInfo()
+            recipe_form.edit_widget.resetInfo()
             return
         else:
             id = int(item.data(head_id, 0))
             elem = elem_manager.map_elem[id]
-            self.edit_widget.setElem(elem)
+            recipe_form.edit_widget.setElem(elem)
             
     def setCurrentSelect(self, elem):
         head = self.topLevelItem(0)
@@ -121,7 +120,7 @@ class GroupTreeWidget(QTreeWidget):
         ElemTreeItem(self, elem, self.topLevelItem(0))
         
         #생성된 아이템 고르기
-        self.edit_widget.setElem(elem)
+        recipe_form.edit_widget.setElem(elem)
         self.topLevelItem(0).update()
 
     def addFactory(self):
@@ -129,7 +128,7 @@ class GroupTreeWidget(QTreeWidget):
         ElemTreeItem(self, elem, self.topLevelItem(0))
         
         #생성된 아이템 고르기
-        self.edit_widget.setElem(elem)
+        recipe_form.edit_widget.setElem(elem)
         self.topLevelItem(0).update()
         
 # 트리용 아이템
