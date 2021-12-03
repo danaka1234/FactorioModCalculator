@@ -7,13 +7,19 @@ import PyQt5
 from PyQt5.QtWidgets    import QMainWindow, QApplication, QDesktopWidget
 
 #layout
+from PyQt5.QtWidgets    import QVBoxLayout
 
 #widget
 from PyQt5.QtWidgets    import QWidget, QTabWidget, QGridLayout, QCheckBox, QComboBox
+from PyQt5.QtWidgets    import QPushButton, QLabel
 
 import config_manager
 import open_dialog, template_manager, elem_manager, item_manager
-import loading_widget, t2_modify, option_widget
+import loading_widget, option_widget
+
+import group_tree, edit_widget, elem_manager
+
+modify_widget = None
 
 class MainWindow(QMainWindow):
     '''
@@ -94,7 +100,7 @@ class MainWindow(QMainWindow):
             
     def setTabWidget(self):
         self.tab_widget = QTabWidget()
-        self.main_widget = t2_modify.ModifyWidget()
+        self.main_widget = ModifyWidget()
         self.tab_widget.addTab(self.main_widget, 'Tree View')
         self.tab_widget.addTab(option_widget.OptionWidget(), 'Option')
         self.setCentralWidget(self.tab_widget)
@@ -110,6 +116,73 @@ class MainWindow(QMainWindow):
     def changeCBTime(self):
         config_manager.time_config = self.cb_time.currentIndex()
     
+
+class ModifyWidget(QWidget):
+    def __init__(self):
+        self.group = elem_manager.map_elem[0]
+        
+        super().__init__()
+        self.initUI()
+        self.setGroup(self.group)
+        
+        global modify_widget
+        modify_widget = self
+    
+    def initUI(self):
+        vbox = QVBoxLayout()
+        grid = QGridLayout()
+        grid_rapper = QGridLayout()
+        vbox.addLayout(grid)
+        vbox.addLayout(grid_rapper)
+        
+        # grid
+        self.bt_goOut = QPushButton('Go out')
+        self.bt_goInto = QPushButton('Go into')
+        grid.addWidget(self.bt_goOut,   0, 2)
+        grid.addWidget(self.bt_goInto,  0, 3)
+        
+        self.bt_addGroup = QPushButton('Add Group')
+        self.bt_addFactory = QPushButton('Add Factory')
+        grid.addWidget(self.bt_addGroup,    0, 4)
+        grid.addWidget(self.bt_addFactory,  0, 5)
+        grid.setColumnStretch(6,1)
+        self.bt_edit = QPushButton('Hide')
+        self.bt_edit.setMaximumWidth(50)
+        grid.addWidget(self.bt_edit,        0, 7)
+        
+        self.label_group = QLabel('None(0)')
+        grid.addWidget(QLabel('Current Group')  , 0, 0)
+        grid.addWidget(self.label_group         , 0, 1)
+        
+        # grid_rapper
+        grid_rapper.addWidget(group_tree.GroupTreeWidget()  , 0, 0, 2, 1)
+        grid_rapper.addWidget(edit_widget.EditWidget()      , 0, 1, 1, 2)
+        grid_rapper.setRowStretch(1, 1)
+        
+        self.bt_addGroup.clicked.connect(group_tree.tree_widget.addGroup)
+        self.bt_addFactory.clicked.connect(group_tree.tree_widget.addFactory)
+        self.bt_edit.clicked.connect(self.toggleRecipeWidget)
+        
+        self.setLayout(vbox)
+        
+    def setGroup(self, group):
+        self.group = group
+        text = group.name + '(' + str(group.id) + ')'
+        self.label_group.setText(text)
+        self.bt_goOut.setEnabled(group.id != 0)
+        group_tree.tree_widget.setTreeRootGroup(group)
+
+    def toggleRecipeWidget(self):
+        global modify_widget
+        if edit_widget.edit_widget.isVisible():
+            if modify_widget is not None:
+                modify_widget.bt_edit.setText("show")
+            edit_widget.edit_widget.hide()
+        else:
+            if modify_widget is not None:
+                modify_widget.bt_edit.setText("hide")
+            edit_widget.edit_widget.show()
+            
 
 # --------------------------- debug
 if __name__ == '__main__':

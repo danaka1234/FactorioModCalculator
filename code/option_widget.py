@@ -2,7 +2,7 @@
 from PyQt5.QtWidgets    import QWidget, QVBoxLayout, QGridLayout
 from PyQt5.QtWidgets    import QPushButton, QLabel, QComboBox
 
-import group_tree, recipe_form, elem_manager, config_manager
+import group_tree, elem_manager, config_manager
 '''
 TabWidget : https://doc.qt.io/qtforpython/PySide6/QtWidgets/QTabWidget.html
 ComboBOx : https://doc.qt.io/qtforpython/PySide6/QtWidgets/QComboBox.html
