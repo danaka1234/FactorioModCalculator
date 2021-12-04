@@ -85,6 +85,9 @@ class GroupTreeWidget(QTreeWidget):
         self.clear()
         item_group = ElemTreeItem(self, self.elem_group, None)
         
+        if self.elem_group is None:
+            return
+            
         # 정렬 : 그냥 child 순위
         for elem in self.elem_group.list_child:
             ElemTreeItem(self, elem, item_group)

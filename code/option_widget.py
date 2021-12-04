@@ -8,10 +8,15 @@ TabWidget : https://doc.qt.io/qtforpython/PySide6/QtWidgets/QTabWidget.html
 ComboBOx : https://doc.qt.io/qtforpython/PySide6/QtWidgets/QComboBox.html
 '''
 
+option_widget = None
+
 class OptionWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
+        
+        global option_widget
+        option_widget = self
     
     def initUI(self):
         grid = QGridLayout()

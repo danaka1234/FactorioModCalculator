@@ -99,11 +99,7 @@ class MainWindow(QMainWindow):
             self.load_widget.setMsg('Don\'t load', False)
             
     def setTabWidget(self):
-        self.tab_widget = QTabWidget()
-        self.main_widget = ModifyWidget()
-        self.tab_widget.addTab(self.main_widget, 'Tree View')
-        self.tab_widget.addTab(option_widget.OptionWidget(), 'Option')
-        self.setCentralWidget(self.tab_widget)
+        self.setCentralWidget(ModifyWidget())
         
     '''
     def checkAutoUpdate(self):
@@ -146,22 +142,27 @@ class ModifyWidget(QWidget):
         grid.addWidget(self.bt_addGroup,    0, 4)
         grid.addWidget(self.bt_addFactory,  0, 5)
         grid.setColumnStretch(6,1)
-        self.bt_edit = QPushButton('Hide')
+        self.bt_edit = QPushButton('Hide\nEdit')
         self.bt_edit.setMaximumWidth(50)
         grid.addWidget(self.bt_edit,        0, 7)
+        self.bt_option = QPushButton('Hide\nOption')
+        self.bt_option.setMaximumWidth(50)
+        grid.addWidget(self.bt_option,      0, 8)
         
         self.label_group = QLabel('None(0)')
         grid.addWidget(QLabel('Current Group')  , 0, 0)
         grid.addWidget(self.label_group         , 0, 1)
         
         # grid_rapper
-        grid_rapper.addWidget(group_tree.GroupTreeWidget()  , 0, 0, 2, 1)
-        grid_rapper.addWidget(edit_widget.EditWidget()      , 0, 1, 1, 2)
-        grid_rapper.setRowStretch(1, 1)
+        grid_rapper.addWidget(group_tree.GroupTreeWidget()  , 0, 0)
+        grid_rapper.addWidget(edit_widget.EditWidget()      , 0, 1)
+        grid_rapper.addWidget(option_widget.OptionWidget()  , 0, 2)
+        grid_rapper.setColumnStretch(0, 1)
         
         self.bt_addGroup.clicked.connect(group_tree.tree_widget.addGroup)
         self.bt_addFactory.clicked.connect(group_tree.tree_widget.addFactory)
-        self.bt_edit.clicked.connect(self.toggleRecipeWidget)
+        self.bt_edit.clicked.connect(self.toggleEditWidget)
+        self.bt_option.clicked.connect(self.toggleOptionWidget)
         
         self.setLayout(vbox)
         
@@ -172,16 +173,27 @@ class ModifyWidget(QWidget):
         self.bt_goOut.setEnabled(group.id != 0)
         group_tree.tree_widget.setTreeRootGroup(group)
 
-    def toggleRecipeWidget(self):
+    def toggleEditWidget(self):
         global modify_widget
         if edit_widget.edit_widget.isVisible():
             if modify_widget is not None:
-                modify_widget.bt_edit.setText("show")
+                modify_widget.bt_edit.setText("Show\nEdit")
             edit_widget.edit_widget.hide()
         else:
             if modify_widget is not None:
-                modify_widget.bt_edit.setText("hide")
+                modify_widget.bt_edit.setText("Hide\nEdit")
             edit_widget.edit_widget.show()
+    
+    def toggleOptionWidget(self):
+        global modify_widget
+        if option_widget.option_widget.isVisible():
+            if modify_widget is not None:
+                modify_widget.bt_option.setText("Show\nEdit")
+            option_widget.option_widget.hide()
+        else:
+            if modify_widget is not None:
+                modify_widget.bt_option.setText("Hide\nEdit")
+            option_widget.option_widget.show()
             
 
 # --------------------------- debug
