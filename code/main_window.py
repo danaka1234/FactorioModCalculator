@@ -188,11 +188,11 @@ class ModifyWidget(QWidget):
         global modify_widget
         if option_widget.option_widget.isVisible():
             if modify_widget is not None:
-                modify_widget.bt_option.setText("Show\nEdit")
+                modify_widget.bt_option.setText("Show\nOption")
             option_widget.option_widget.hide()
         else:
             if modify_widget is not None:
-                modify_widget.bt_option.setText("Hide\nEdit")
+                modify_widget.bt_option.setText("Hide\nOption")
             option_widget.option_widget.show()
             
 
