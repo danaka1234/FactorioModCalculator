@@ -1,13 +1,13 @@
 # coding: utf-8
 import os, traceback
-import config_manager, template_manager
+import option_widget, template_manager
 import item_manager
 
 from PyQt5.QtGui        import QPixmap
 
 def getAmountPerTime(amount, num_for_round = 3, bUnit = True, bTimeStr = True):
-    time = config_manager.time_set[config_manager.time_config]
-    time_name = config_manager.time_name[config_manager.time_config]
+    time = option_widget.time_set[option_widget.time_config]
+    time_name = option_widget.time_name[option_widget.time_config]
     amount2 = amount*time
     
     str_num = getAmountRound(amount2, num_for_round, bUnit=bUnit)

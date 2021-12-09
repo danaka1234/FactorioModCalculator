@@ -28,7 +28,7 @@ https://doc.qt.io/qtforpython/PySide2/QtWidgets/QLayout.html
 init label_icon image https://pythonspot.com/pyqt5-image/
 '''
 
-import elem_manager, item_manager, common_func, group_tree, config_manager, common_class
+import elem_manager, item_manager, common_func, group_tree, option_widget, common_class
 
 edit_widget = None
 
@@ -177,7 +177,7 @@ class EditWidget(QWidget):
         #공용
         self.edit_name.setText(elem.name)
         self.label_id.setText(str(elem.id))
-        time = config_manager.time_set[config_manager.time_config]
+        time = option_widget.time_set[option_widget.time_config]
         self.edit_factories.setText(common_func.getAmountRound(elem.num_factory))
         self.set_matearial_product()
         
@@ -214,7 +214,7 @@ class EditWidget(QWidget):
     def onGoalChanged(self):
         if self.elem is None:
             return
-        time = config_manager.time_set[config_manager.time_config]
+        time = option_widget.time_set[option_widget.time_config]
         goal = float(self.edit_goal.text()) / time
         self.elem.changeGoal(goal)
         group_tree.tree_widget.updateItem(self.elem)

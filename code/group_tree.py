@@ -13,7 +13,7 @@ from PyQt5.QtWidgets    import QWidget, QLabel
 from PyQt5.QtGui        import QIcon, QPixmap
 from PyQt5.QtCore       import QSize
 
-import item_manager, elem_manager, config_manager
+import item_manager, elem_manager, option_widget
 import edit_widget, common_func
 
 import math
@@ -191,7 +191,7 @@ class ElemTreeItem(QTreeWidgetItem):
             
     def update(self):
         elem = self.elem
-        iconSize = config_manager.iconSize
+        iconSize = option_widget.icon_size
         
         widget_icon = QLabel()
         if type(elem) == elem_manager.ElemFactory and elem.recipe is not None:

@@ -39,8 +39,8 @@ class MainWindow(QMainWindow):
     def initUI(self):
         self.title = config_manager.name_app
         self.setWindowTitle(self.title)
-        w = int(config_manager.get_config('ui', 'window_width'))
-        h = int(config_manager.get_config('ui', 'window_height'))
+        w = int(config_manager.get_config('display', 'window_width'))
+        h = int(config_manager.get_config('display', 'window_height'))
         self.setGeometry(0, 0, w, h)
         
         # set windows center
@@ -52,7 +52,7 @@ class MainWindow(QMainWindow):
         self.tab_widget = None
         
         #move to 2nd or other monitor
-        num_monitor = int(config_manager.get_config('ui', 'display_monitor'))
+        num_monitor = int(config_manager.get_config('display', 'display_monitor'))
         num_monitor = max(0, num_monitor - 1)
         pos_cur = self.pos()
         pos_monitor = QDesktopWidget().screenGeometry(num_monitor)
@@ -100,18 +100,6 @@ class MainWindow(QMainWindow):
             
     def setTabWidget(self):
         self.setCentralWidget(ModifyWidget())
-        
-    '''
-    def checkAutoUpdate(self):
-        config_manager.auto_update = self.check_auto.isChecked()
-    '''
-        
-    def checkExpensive(self):
-        config_manager.expensive = self.check_expensive.isChecked()
-        
-    def changeCBTime(self):
-        config_manager.time_config = self.cb_time.currentIndex()
-    
 
 class ModifyWidget(QWidget):
     def __init__(self):

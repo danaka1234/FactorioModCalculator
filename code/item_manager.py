@@ -13,7 +13,7 @@ import os
 
 from PyQt5.QtGui        import QPixmap, QIcon
 
-import config_manager, log_manager, loading_widget, template_manager, lua_manager
+import option_widget, log_manager, loading_widget, template_manager, lua_manager
 
 map_item = dict()
 map_recipe = dict()
@@ -354,13 +354,13 @@ class Recipe(FCITEM):
         inst = Recipe(map)
     
     def getListProduct(self):
-        if config_manager.expensive == True:
+        if option_widget.expensive == True:
             if len(self.list_output_expensive) != 0:
                 return self.list_output_expensive
         return self.list_output
         
     def getListMaterial(self):
-        if config_manager.expensive == True:
+        if option_widget.expensive == True:
             if len(self.list_input_expensive) != 0:
                 return self.list_input_expensive
         return self.list_input
@@ -380,7 +380,7 @@ class Recipe(FCITEM):
         return None
         
     def getTime(self):
-        if config_manager.expensive == True:
+        if option_widget.expensive == True:
             if self.time_expensive != 0:
                 return self.time_expensive
         return self.time

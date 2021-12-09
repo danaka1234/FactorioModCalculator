@@ -6,28 +6,30 @@ config_path = config_path_default
 config = configparser.ConfigParser()
 
 # config > section > option
+# config는 기본적으로 처음 켤때 사용하는 옵션들을 넣자
 
-config_default = dict()
-
-config_default['template'] = dict()
-config_default['template']['path_factorio'] = 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Factorio'
-config_default['template']['path_mods'] = '%%AppData%%\\Factorio'
-config_default['template']['path_template_dir'] = 'fmc_template'
-config_default['template']['auto_load_from_template' ] = 'no'
-config_default['template']['auto_load_from_data'] = 'no'
-config_default['template']['language_1st'] = 'en'
-config_default['template']['language_2nd'] = 'ko'
-config_default['template']['delete_temp_files'] = 'no'
-
-config_default['factories'] = dict()
-config_default['factories']['path_save'] = 'fmc_factories.json'
-config_default['factories']['auto_load'] = 'no'
-config_default['factories']['auto_save'] = 'yes'
-
-config_default['ui'] = dict()
-config_default['ui']['display_monitor'] = '1'
-config_default['ui']['window_width']    = '800'
-config_default['ui']['window_height']   = '600'
+config_default = {
+    'template': {
+        'path_factorio':'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Factorio'
+        , 'path_mods':'%%AppData%%\\Factorio'
+        , 'path_template_dir':'fmc_template'
+        , 'auto_load_from_template' :'no'
+        , 'auto_load_from_data':'no'
+        , 'language_1st':'en'
+        , 'language_2nd':'ko'
+        , 'delete_temp_files':'no'
+    },
+    'factories': {
+        'path_save':'fmc_factories.json'
+        , 'auto_load':'no'
+        , 'auto_save':'yes'
+    },
+    'display' : {
+        'display_monitor':'1'
+        , 'window_width':'800'
+        , 'window_height':'600'
+    }
+}
 
 #기타 설정과 전역변수들을 여기에 쑤셔박자
 list_mods_all   = []
@@ -37,15 +39,6 @@ path_factorio = ''
 path_mods = ''
 
 str_error = ''
-
-#for factories 
-expensive = False
-auto_update = True
-time_config = 1
-time_set = [1, 60, 3600]
-time_name = ['s', 'm', 'h']
-
-iconSize = 16
 
 name_app = 'Factorio Mod Calculator'
     
@@ -81,7 +74,7 @@ def get_config(section, option, type = None):
 def set_config(section, option, value):
     if not config.has_section(section):
         config.add_section(section)
-    #config.set(section, option, value)
+    config.set(section, option, str(value))
     #%AppData% 저장할 떄 % 관련 에러가 있다
     
 def read_config():
