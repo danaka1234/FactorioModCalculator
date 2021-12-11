@@ -4,6 +4,13 @@ import option_widget, template_manager
 import item_manager
 
 from PyQt5.QtGui        import QPixmap
+from PyQt5.QtCore       import Qt
+'''
+QPixmap
+https://doc.qt.io/qtforpython-5/PySide2/QtGui/QPixmap.html
+https://python.hotexamples.com/examples/PyQt4.QtGui/QPixmap/fill/python-qpixmap-fill-method-examples.html
+https://wikidocs.net/145722
+'''
 
 def getAmountPerTime(amount, num_for_round = 3, bUnit = True, bTimeStr = True):
     time = option_widget.time_set[option_widget.time_config]
@@ -48,8 +55,6 @@ def getCommonPath(name):
         path = os.path.join(template_manager.getTemplateDir(), template_manager.name_electric_icon)
     elif name == 'fuel':
         path = os.path.join(template_manager.getTemplateDir(), template_manager.name_fuel_icon)
-    elif name == 'pollution':
-        path = os.path.join(template_manager.getTemplateDir(), template_manager.name_pollution_icon)
     elif name == 'factory':
         path = os.path.join(template_manager.getTemplateDir(), \
             'graphics','icons', \
@@ -58,6 +63,10 @@ def getCommonPath(name):
     
 def getCommonPixmap(name, x = 32, y = 32):
     path = getCommonPath(name)
+    if name == 'pollution':
+        pixmap = QPixmap(x, y)
+        pixmap.fill(Qt.red)
+        return pixmap
     return QPixmap(path).scaled(x, y)
 
 def printCallStack():

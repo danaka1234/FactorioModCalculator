@@ -2,7 +2,9 @@
 from PyQt5.QtWidgets    import QWidget, QVBoxLayout, QGridLayout
 from PyQt5.QtWidgets    import QPushButton, QLabel, QComboBox
 
-import group_tree, elem_manager, option_widget
+import json, os
+
+import group_tree, elem_manager, config_manager
 '''
 TabWidget : https://doc.qt.io/qtforpython/PySide6/QtWidgets/QTabWidget.html
 ComboBOx : https://doc.qt.io/qtforpython/PySide6/QtWidgets/QComboBox.html
@@ -13,10 +15,58 @@ option_widget = None
 #for project option
 expensive = False
 icon_size = 16
-
 time_config = 1
+
+#sub data
 time_set = [1, 60, 3600]
 time_name = ['s', 'm', 'h']
+
+path_option = 'option.json'
+option_changed = False
+
+def load_option():
+    global path_option, option_changed
+    path_template_dir = config_manager.get_config('template', 'path_template_dir')
+    path_file = os.path.join(path_template_dir, path_option)
+    
+    if not os.path.exists(path_file):
+        option_changed = True
+        save_option()
+        return
+        
+    str_temp = ''
+    with open(path_file, 'r') as file:    # save
+        str_temp = file.read()
+    dic_opt = json.loads(str_temp)
+    
+    global expensive, icon_size, time_config
+    if dic_opt.get('expensive') is not None :
+        expensive = dic_opt['expensive']
+    if dic_opt.get('icon_size') is not None :
+        icon_size = dic_opt['icon_size']
+    if dic_opt.get('time_config') is not None :
+        time_config = dic_opt['time_config']
+        
+def save_option():
+    global option_changed
+    if not option_changed:
+        return
+        
+    # 옵션 추가시 여기서 처리...
+    global expensive, icon_size, time_config
+    dic_opt = {
+        'expensive':expensive,
+        'icon_size':icon_size,
+        'time_config':time_config,
+    }
+    str_temp = json.dumps(dic_opt, indent=4)
+    
+    global path_option
+    path_template_dir = config_manager.get_config('template', 'path_template_dir')
+    path_file = os.path.join(path_template_dir, path_option)
+    
+    with open(path_file, 'w') as file:    # save
+        file.write(str_temp)
 
 class OptionWidget(QWidget):
     def __init__(self):
@@ -80,3 +130,11 @@ class OptionWidget(QWidget):
             time_config = 0
             
         group_tree.tree_widget.rebuildTree()
+        
+
+# -------------------------- debug
+def main() :
+    load_option()
+    
+if __name__ == '__main__':
+    main()

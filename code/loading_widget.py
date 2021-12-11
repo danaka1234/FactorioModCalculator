@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout
 from PyQt5.QtWidgets import QLabel, QProgressBar
 
 import config_manager, main_window, template_manager, lua_manager, item_manager, elem_manager
+import option_widget
 '''
 QProgressBar, QThread
 https://www.opentutorials.org/module/544/18723
@@ -125,7 +126,7 @@ class LoadingWidget(QWidget):
             
     def doLoad(self, bLoadTmpDir, bLoadFac, path_template_dir = None):
     
-        if not bLoadTmpDir:
+        if not bLoadTmpDir: # 최초 로드    
             #---------------------------------------- Load Factorio Lua
             main = LoadRapper('Load Factorio Lua')
             self.thread.list_load.append(main)
@@ -207,7 +208,11 @@ class LoadingWidget(QWidget):
             main.list_sub.append(\
                 LoadRapperSub('Save Template', \
                     template_manager.saveTemplateFile))
-        else:
+                    
+            main.list_sub.append(\
+                LoadRapperSub('Save Option', \
+                    option_widget.save_option))
+        else:   # 템플릿(기존 프로젝트)에서 로드
             #---------------------------------------- Load Template
             main = LoadRapper('Load Template From Dir')
             self.thread.list_load.append(main)
@@ -216,8 +221,11 @@ class LoadingWidget(QWidget):
                 LoadRapperSub('Load Template From Dir', \
                     template_manager.loadTemplateFromDir, \
                     [self, path_template_dir]))
+                    
+            main.list_sub.append(\
+                LoadRapperSub('Load Option', \
+                    option_widget.load_option))
         
-    
         ##------------------------------ Common Post Process
         main = LoadRapper('Common Post Process')
         self.thread.list_load.append(main)

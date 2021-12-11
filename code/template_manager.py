@@ -12,20 +12,15 @@ import json
 import config_manager, item_manager
 from PyQt5.QtGui import QPixmap
 
-#inst_tempdir = None
 path_tempdir = ''
-#bInitTempdir = False
 load_template = 'None'
-saveTo   = 0    #0 : None, 1 : dir, 2 : zip
 version_current = 1.1
 
 name_template_json = 'fmc_template.json'
-#load_type = 0
 
 name_clock = 'clock-icon.png'
 name_fac_icon = 'factorio.png'
 name_factory_icon = 'assembling-machine-1.png'
-name_pollution_icon = 'pollution-visualization.png'
 name_electric_icon = 'electricity-icon-unplugged.png'
 name_fuel_icon = 'fuel-icon-red.png'
 
@@ -33,7 +28,7 @@ def setTemplateDir(path_template_dir):
     global path_tempdir
     path_tempdir = path_template_dir
     if not os.path.isdir(path_tempdir):
-            os.mkdir(path_tempdir)
+        os.mkdir(path_tempdir)
             
 def getTemplateDir():
     global path_tempdir
@@ -107,10 +102,6 @@ def copyDefaultIcon():
     path_dest_fuel_icon = os.path.join(path_template, name_fuel_icon)
     shutil.copyfile(path_fuel_icon, path_dest_fuel_icon)
     
-    path_pollution_icon = os.path.join(path_graphics, name_pollution_icon)
-    path_dest_pollution_icon = os.path.join(path_template, name_pollution_icon)
-    shutil.copyfile(path_pollution_icon, path_dest_pollution_icon)
-    
 def onExitForFile():
     '''
     global saveTo
@@ -165,7 +156,6 @@ def saveTemplateFile():
     file = open(path_template_json, "w")
     file.write(str_temp)
     file.close()
-    saveTo = 1
     
 def loadTemplateFromDir(args):
     global load_template, name_template_json, version_current

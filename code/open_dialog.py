@@ -23,8 +23,6 @@ class OpenDialog(QDialog):
     def __init__(self, parent = None):
         super().__init__(parent)
         self.initUI()
-        self.load_type_tmp = None
-        self.load_type_fac = None
         self.list_check = []
         
     def initUI(self):
@@ -179,8 +177,6 @@ class OpenDialog(QDialog):
     
     def onButtonOpen(self):
         bInit = False
-        self.load_type_tmp = None
-        self.load_type_fac = None
         if   self.radio_tmp_origin.isChecked() :
             bInit = self.initLoadTemplateByOrigin()
             self.type = 'origin'
