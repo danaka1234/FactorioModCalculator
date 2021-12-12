@@ -18,6 +18,7 @@ config_default = {
         , 'language_1st':'en'
         , 'language_2nd':'ko'
         , 'delete_temp_files':'no'
+        , 'save_as_list':'no'
     },
     'factories': {
         'path_save':'fmc_factories.json'

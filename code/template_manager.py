@@ -6,10 +6,8 @@ import shutil
 #https://docs.python.org/ko/3/library/shutil.html
 import atexit
 #https://docs.python.org/ko/3/library/atexit.html
-import json
-#https://docs.python.org/ko/3/library/json.html
 
-import config_manager, item_manager
+import config_manager, item_manager, json_manager
 from PyQt5.QtGui import QPixmap
 
 path_tempdir = ''
@@ -102,24 +100,8 @@ def copyDefaultIcon():
     path_dest_fuel_icon = os.path.join(path_template, name_fuel_icon)
     shutil.copyfile(path_fuel_icon, path_dest_fuel_icon)
     
-def onExitForFile():
-    '''
-    global saveTo
-    save_type_template = int(config_manager.get_config('save', 'save_type_template'))
-    load_type_template = int(config_manager.get_config('save', 'load_type_template'))
-    
-    #저장 처리 - 폴더 저장할것 / 폴더에서 로드하지 않음 / 아직 저장 안함
-    if save_type_template == 1 and load_type_template != 1 and saveTo == 0:
-        saveTemplateFile()
-        
-    #폴더 삭제 처리
-    if save_type_template != 1:
-        path = getTemplateDir()
-        shutil.rmtree(path)
-    '''
-        
 def saveTemplateFile():
-    global name_template_json, saveTo, version_current
+    global name_template_json, version_current
     
     map = {}
     
@@ -127,35 +109,32 @@ def saveTemplateFile():
     
     #item 등
     list_map = [\
-    [item_manager.map_item, 'item'],\
-    [item_manager.map_recipe, 'recipe'],\
-    [item_manager.map_group, 'group'],\
-    [item_manager.map_subgroup, 'subgroup'],\
-    [item_manager.map_factory, 'factory'],\
-    [item_manager.map_module, 'module'],\
+    ['item'     , item_manager.map_item     ],\
+    ['recipe'   , item_manager.map_recipe   ],\
+    ['group'    , item_manager.map_group    ],\
+    ['subgroup' , item_manager.map_subgroup ],\
+    ['factory'  , item_manager.map_factory  ],\
+    ['module'   , item_manager.map_module   ],\
     ]
     for elem in list_map:
-        map[elem[1]] = []
-        for key in elem[0]:
-            item = elem[0][key]
-            map[elem[1]].append(item.toMap())
+        key = elem[0]
+        map[key] = {}
+        for key2 in elem[1]:
+            item = elem[1][key2]
+            map[key][key2] = item.toMap()
     
     #locale
     map['locale1'] = item_manager.map_locale_1st
     map['locale2'] = item_manager.map_locale_2nd
     
-    str_temp = json.dumps(map, indent=4)
-    
     path_temp = getTemplateDir()
-
+        
     if not os.path.isdir(path_temp):
         os.makedirs(path_temp)
      
-    # template 저장
+    # json 저장
     path_template_json = path_temp + '\\' + name_template_json
-    file = open(path_template_json, "w")
-    file.write(str_temp)
-    file.close()
+    json_manager.save_json(path_template_json, map)
     
 def loadTemplateFromDir(args):
     global load_template, name_template_json, version_current
@@ -163,24 +142,24 @@ def loadTemplateFromDir(args):
     path_template_dir = args[1]
     path_template_json = path_template_dir + '\\' + name_template_json
     if not os.path.isdir(path_template_dir):
-        msg = 'load fail from \'' + path_template_dir + '\''
-        load_widget.setMsg(msg, True)
+        if load_widget is not None:
+            msg = 'load fail from \'' + path_template_dir + '\''
+            load_widget.setMsg(msg, True)
         return
     if not os.path.isfile(path_template_json):
-        msg = 'load fail from \'' + path_template_dir + '\''
-        load_widget.setMsg(msg, True)
+        if load_widget is not None:
+            msg = 'load fail from \'' + path_template_dir + '\''
+            load_widget.setMsg(msg, True)
         return
-    
-    file = open(path_template_json, "r")
-    str_temp = file.read()
-    file.close()
-    
-    map = json.loads(str_temp)
+        
+    # json 불러오기
+    map = json_manager.load_json(path_template_json)
     
     version = map['version']
     if version != version_current:
-        msg = 'Template version is not same'
-        load_widget.setMsg(msg, True)
+        if load_widget is not None:
+            msg = 'Template version is not same'
+            load_widget.setMsg(msg, True)
         return
     
     #item
@@ -196,8 +175,12 @@ def loadTemplateFromDir(args):
     for elem in list_class:
         list_item = map[elem[0]]
         TYPE = elem[1]
-        for item in list_item:
-            TYPE.fromMap(item)
+        if type(list_item) == dict:
+            for item in list_item.values():
+                TYPE.fromMap(item)
+        else:
+            for item in list_item:
+                TYPE.fromMap(item)
             
     list_map = [\
     ['locale1', item_manager.map_locale_1st],\
@@ -216,13 +199,14 @@ def loadTemplateFromDir(args):
 def loadFactories(load_type, path):
     return False
 
-atexit.register(onExitForFile)
+#atexit.register(onExitForFile)
 
 # -------------------------- debug
 def main() :
-    icon = "__base__/graphics/icons/steel-chest.png"
+    #icon = "__base__/graphics/icons/steel-chest.png"
     #str_icon, icon_copied = loadIcon(icon)
-    print(getTemplateDir())
+    #print(getTemplateDir())
+    loadTemplateFromDir([None, 'fmc_template'])
     
 if __name__ == '__main__':
     main()
