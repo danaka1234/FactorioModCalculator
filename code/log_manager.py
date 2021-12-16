@@ -1,5 +1,5 @@
 # coding: utf-8
-import os, atexit
+import os
 import datetime
 
 import config_manager
@@ -9,7 +9,6 @@ name_log = 'FMC.log'
 
 def init_log():
     global file_log
-    atexit.register(onExit_log)
     file_log = open(name_log, 'a')
     write_log('--------------------------------------------------')
     write_log('Execute ' + config_manager.name_app)

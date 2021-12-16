@@ -225,23 +225,35 @@ class LoadingWidget(QWidget):
             main.list_sub.append(\
                 LoadRapperSub('Load Option', \
                     option_widget.load_option))
-        
-        ##------------------------------ Common Post Process
-        main = LoadRapper('Common Post Process')
+                    
+        ##------------------------------ 2nd Process
+        main = LoadRapper('2nd Process')
         self.thread.list_load.append(main)
         
         main.list_sub.append(\
             LoadRapperSub('Sort Popup Item list', \
                 item_manager.sortItemList))
                 
-        main.list_sub.append(\
-            LoadRapperSub('Init Elem Manager', \
-                elem_manager.initElemManager))
-                
         if config_manager.get_config('template', 'delete_temp_files', 'boolean'):
             main.list_sub.append(\
                 LoadRapperSub('Delete Temporary Files', \
                     lua_manager.del_link_base))
+                    
+        
+        ##------------------------------ 3rd Process
+        main = LoadRapper('3rd Process')
+        self.thread.list_load.append(main)
+        
+        if not bLoadTmpDir: # 최초 로드
+            pass
+        else:
+            main.list_sub.append(\
+                LoadRapperSub('Load Factories', \
+                    elem_manager.load_elem))
+                    
+        main.list_sub.append(\
+            LoadRapperSub('Init Elem Manager', \
+                elem_manager.initElemManager))
     
         self.thread.start()
     

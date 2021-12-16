@@ -1,18 +1,24 @@
 # coding: utf-8
 
-import sys, math
+import sys, math, os
 import random   #https://docs.python.org/ko/3/library/random.html
 import queue    #https://docs.python.org/ko/3.8/library/queue.html
                 #http://www.daleseo.com/python-priority-queue
 import item_manager, common_func
+import json_manager, config_manager, template_manager
 
 map_elem = dict()
 map_link = dict()
 id_max = 10000
 #id_temp = 10000
 
+name_elem_json = 'fmc_factories.json'
+version_current = 0.1
+factories_changed = False
+
 def generageElemId(elem):
-    global map_elem, id_max, id_temp
+    global map_elem, id_max, id_temp, factories_changed
+    factories_changed = True
     id = random.randrange(id_max)
     #id_temp = id_temp-1
     #id = id_temp
@@ -51,7 +57,7 @@ def changeLinkId(link):
     generageLinkId(link)
     del map_link[id]
 '''
-
+'''
 class ElemLink:
     def __init__(self, name, consumer, producer, ratio):
         self.name = name
@@ -64,7 +70,7 @@ class ElemLink:
         delLinkId(self.id)
         self.consumer.map_material[self.name].list_link.remove(self)
         self.producer.map_product [self.name].list_link.remove(self)
-    
+'''
 class ElemProduct:       #내(생산자)가 생산하는것
     def __init__(self, name_product, sum_goal = 0, num_real = 0):
         self.name_product = name_product
@@ -72,12 +78,40 @@ class ElemProduct:       #내(생산자)가 생산하는것
         self.num_real = num_real    #실제 생산량 / 내(생산자)가 생산하는 양 기록
         self.sum_ratio = 0
         self.list_link = [] #ElemLink
+        
+    def toMap(self):
+        map = {
+            'name' : self.name_product,
+            'sum_goal' : self.sum_goal,
+            'num_real' : self.num_real,
+            'sum_ratio' : self.sum_ratio,
+        }
+        return map
+        
+    def fromMap(map):
+        elem = ElemProduct(map['name'])
+        elem.sum_goal = map['sum_goal']
+        elem.num_real = map['num_real']
+        elem.sum_ratio = map['sum_ratio']
+        return elem
  
 class ElemMaterial:      #내(소비자)가 필요로 하는것
     def __init__(self, name_material, num_need = 0):
         self.name_material = name_material
         self.num_need = num_need    # 필요 재료 생샨량 / 나(소비자)가 필요한 양
         self.list_link = [] #ElemLink
+        
+    def toMap(self):
+        map = {
+            'name' : self.name_material,
+            'num_need' : self.num_need,
+        }
+        return map
+        
+    def fromMap(map):
+        elem = ElemMaterial(map['name'])
+        elem.num_need = map['num_need']
+        return elem
 
 class Elem:
     def __init__(self, id_self, group):
@@ -107,6 +141,66 @@ class Elem:
         if self.order != other.order:
             return self.order < other.order
         return self.id < other.id
+        
+    # 하위(Factory) 호출 > 상위(Elem) 호출 > 하위 toMap 진행
+    def toMap(self):
+        map_p = dict()
+        map_m = dict()
+        for item in self.map_product.items():
+            map_p[item[0]] = item[1].toMap()
+        for item in self.map_material.items():
+            map_m[item[0]] = item[1].toMap()
+        map = {
+            'id' : self.id,
+            'x' : self.x,
+            'y' : self.y,
+            'name' : self.name,
+            'item_goal' : \
+                self.item_goal.name \
+                if self.item_goal is not None \
+                else None,  \
+            'num_factory' : self.num_factory,
+            'order' : self.order,
+            'energy' : self.energy,
+            'emission' : self.emission,
+            'map_product' : map_p,
+            'map_material' : map_m,
+            'group' : 
+                self.group.id \
+                if self.group is not None\
+                else None,
+        }
+        return map
+        
+    # 상위(Elem) 호출 > 하위(Factory) 호출 > 상위 fromMap 진행
+    def fromMap(map):
+        global map_elem
+        elem = None
+        if map['_type'] == 'factory':
+            elem = ElemFactory.fromMap(map)
+        elif map['_type'] == 'group':
+            elem = ElemGroup.fromMap(map)
+            
+        elem.x = map['x']
+        elem.y = map['y']
+        elem.name = map['name']
+        elem.item_goal = \
+            item_manager.map_item[map['item_goal']] \
+            if map['item_goal'] is not None \
+            else None
+        elem.num_factory = map['num_factory']
+        elem.order = map['order']
+        elem.energy = map['energy']
+        elem.emission = map['emission']
+        map_p = dict()
+        map_m = dict()
+        for item in map['map_product'].items():
+            map_p[item[0]] = ElemProduct.fromMap(item[1])
+        for item in map['map_material'].items():
+            map_m[item[0]] = ElemMaterial.fromMap(item[1])
+        elem.group = None
+        
+        return elem
             
     def deleteElem(self):
         if self.group is None:
@@ -132,6 +226,7 @@ class Elem:
         '''
         #self.deleteElemSub()
 
+    '''
     def connectProduct(self, consumer, name_product, ratio = 1):
         if self    .map_product .get(name_product) is None :
             self    .map_product [name_product] = ElemProduct(name_product)
@@ -148,7 +243,8 @@ class Elem:
             link = ElemLink(name_product, consumer, self, ratio)
             self    .map_product [name_product].list_link.append(link)
             consumer.map_material[name_product].list_link.append(link)
-        
+    '''
+    
     def clearGoalNeed(self):
         for key in self.map_product .keys():
             self.map_product[key] .sum_goal = 0
@@ -270,6 +366,59 @@ class ElemFactory(Elem):
         self.changeFactoryFromList(list_factory)
         self.changeModule(list_module, bFillFirst=True)
         self.changeGoal(num_goal)
+        
+    def toMap(self):
+        map = super().toMap()
+        map['_type'] = 'factory'
+        map['recipe'] = \
+            self.recipe.name\
+            if self.recipe is not None\
+            else None
+        map['factory'] = \
+            self.factory.name\
+            if self.factory is not None\
+            else None
+        map['list_module'] = self.list_module
+        map['num_module'] = self.num_module
+        map['num_goal'] = self.num_goal
+        map['beacon'] = self.beacon
+        map['level'] = self.level
+        
+        map['speed'] = self.num_goal
+        map['productivity'] = self.productivity
+        map['consumption'] = self.consumption
+        map['pollution'] = self.pollution
+        
+        map['bFacNumBase'] = self.bFacNumBase
+        
+        return map
+    
+    def fromMap(map):
+        id = map['id']
+        e = ElemFactory(id, None)
+        
+        e.recipe = \
+            item_manager.map_recipe[map['recipe']]\
+            if map['recipe'] is not None\
+            else None
+        e.factory = \
+            item_manager.map_factory[map['factory']]\
+            if map['factory'] is not None\
+            else None
+        e.list_module = map['list_module']
+        e.num_module = map['num_module']
+        e.num_goal = map['num_goal']
+        e.beacon = map['beacon']
+        e.level = map['level']
+        
+        e.speed = map['speed']
+        e.productivity = map['productivity']
+        e.consumption = map['consumption']
+        e.pollution = map['pollution']
+        
+        e.bFacNumBase = map['bFacNumBase']
+        
+        return e
     
     def changeItem(self, item, bUpdate=True, bResetRecipe=True):
         if item is None:
@@ -430,7 +579,7 @@ class ElemFactory(Elem):
             self.emission = 0
             self.energy = 0
             
-        if all or group:
+        if (all or group) and self.group is not None:
             self.group.updateGroupInOut()
         
     def updateInOut(self):
@@ -529,6 +678,7 @@ class ElemFactory(Elem):
             self.recipe = None
             self.map_product[name_product] = ElemProduct(name_product, num_goal)
 
+    '''
     def makeGraphByDFS(self, parent_group, map_search_recipe, level, list_factory, list_module, beacon):
         # 겹치지 않기 위한 map 
         map_search_recipe[self.recipe.name] = self
@@ -557,13 +707,26 @@ class ElemFactory(Elem):
                 node_child = ElemFactory(None, parent_group, item_material, 0, list_factory, list_module, beacon)
                 node_child.connectProduct(self, name_material)
                 node_child.makeGraphByDFS(parent_group, map_search_recipe, self.level, list_factory, list_module, beacon)
-
+    '''
 class ElemGroup(Elem):
     def __init__(self, id_self, group, id_root):
         super().__init__(id_self, group)
         self.list_child = []
         self.id_root       = id_root    #이거는 create에서만 쓰자
         self.energy_fuel = 0
+        
+    def toMap(self):
+        map = super().toMap()
+        map['_type'] = 'group'
+        map['energy_fuel'] = self.energy_fuel
+        
+        return map
+        
+    def fromMap(map):
+        id = map['id']
+        e = ElemGroup(id, None, 0)
+        e.energy_fuel = map['energy_fuel']
+        return e
     
     def deleteElem(self):
         super().deleteElem()
@@ -685,8 +848,63 @@ class ElemGroup(Elem):
             node_root = map_elem[self.id_root]
             node_root.updateDown(True)
     '''
-
+    
+def save_elem():
+    global map_elem, map_link, factories_changed
+    if not factories_changed:
+        return
+        
+    map_e = dict()
+    map_l = dict()
+    for item in map_elem.items():
+        map_e[item[0]] = item[1].toMap()
+    for item in map_link.items():
+        map_l[item[0]] = item[1].toMap()
+        
+    map = {
+        'factory'   : map_e,
+        'link'      : map_l
+    }
+    
+    path_template_dir = template_manager.getTemplateDir()
+    path_elem_json = os.path.join(path_template_dir, name_elem_json)
+    json_manager.save_json(path_elem_json, map)
+    
+def load_elem():
+    global map_elem, map_link
+    path_template_dir = template_manager.getTemplateDir()
+    path_elem_json = os.path.join(path_template_dir, name_elem_json)
+    map = json_manager.load_json(path_elem_json)
+    if map is None:
+        return
+    map_e = map['factory']
+    map_l = map['link']
+    
+    # json에서 key는 무조건 string
+    # https://stackoverflow.com/questions/1450957/pythons-json-module-converts-int-dictionary-keys-to-strings
+    for item in map_e.items():
+        Elem.fromMap(item[1])
+        
+    for item in map_l.items():
+        ElemLink.fromMap(item[1])
+    
+    #group 링크하기
+    for item in map_elem.items():
+        id = item[0]
+        e = item[1]
+        id_group = map_e[str(id)]['group']
+        if id_group is not None:
+            g = map_elem[id_group]
+            e.group = g
+            g.list_child.append(e)
+    
+def onExit_elem():
+    save_elem()
+    
 def initElemManager():
-    group = ElemGroup(0, None, None)
-    group.changeFacNum(1)
+    global map_elem, factories_changed
+    if len(map_elem) == 0:
+        group = ElemGroup(0, None, None)
+        group.changeFacNum(1)
+        factories_changed = True
     

@@ -3,6 +3,9 @@
 import sys, os
 import PyQt5
 
+import atexit
+#https://docs.python.org/ko/3/library/atexit.html
+
 #core
 from PyQt5.QtWidgets    import QMainWindow, QApplication, QDesktopWidget
 
@@ -13,7 +16,7 @@ from PyQt5.QtWidgets    import QVBoxLayout
 from PyQt5.QtWidgets    import QWidget, QTabWidget, QGridLayout, QCheckBox, QComboBox
 from PyQt5.QtWidgets    import QPushButton, QLabel
 
-import config_manager
+import config_manager, log_manager
 import open_dialog, template_manager, elem_manager, item_manager
 import loading_widget, option_widget
 
@@ -182,10 +185,16 @@ class ModifyWidget(QWidget):
             if modify_widget is not None:
                 modify_widget.bt_option.setText("Hide\nOption")
             option_widget.option_widget.show()
-            
+
+# 순서가 중요할 수 있으므로 여기에 모두 쓰자...
+# 등록 역순으로 실행되는 것으로 보인다. 스택인듯?
+def register_onExit():
+    atexit.register(log_manager.onExit_log)
+    atexit.register(elem_manager.onExit_elem)
 
 # --------------------------- debug
 if __name__ == '__main__':
+    register_onExit()
     app = QApplication(sys.argv)
     mainMenu = MainWindow()
     

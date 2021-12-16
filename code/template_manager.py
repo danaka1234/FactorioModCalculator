@@ -4,8 +4,6 @@
 import sys, os
 import shutil
 #https://docs.python.org/ko/3/library/shutil.html
-import atexit
-#https://docs.python.org/ko/3/library/atexit.html
 
 import config_manager, item_manager, json_manager
 from PyQt5.QtGui import QPixmap
@@ -127,20 +125,20 @@ def saveTemplateFile():
     map['locale1'] = item_manager.map_locale_1st
     map['locale2'] = item_manager.map_locale_2nd
     
-    path_temp = getTemplateDir()
+    path_template_dir = getTemplateDir()
         
-    if not os.path.isdir(path_temp):
-        os.makedirs(path_temp)
+    if not os.path.isdir(path_template_dir):
+        os.makedirs(path_template_dir)
      
     # json 저장
-    path_template_json = path_temp + '\\' + name_template_json
+    path_template_json = os.path.join(path_template_dir, name_template_json)
     json_manager.save_json(path_template_json, map)
     
 def loadTemplateFromDir(args):
     global load_template, name_template_json, version_current
     load_widget = args[0]
     path_template_dir = args[1]
-    path_template_json = path_template_dir + '\\' + name_template_json
+    path_template_json = os.path.join(path_template_dir, name_template_json)
     if not os.path.isdir(path_template_dir):
         if load_widget is not None:
             msg = 'load fail from \'' + path_template_dir + '\''
@@ -198,8 +196,6 @@ def loadTemplateFromDir(args):
     
 def loadFactories(load_type, path):
     return False
-
-#atexit.register(onExitForFile)
 
 # -------------------------- debug
 def main() :

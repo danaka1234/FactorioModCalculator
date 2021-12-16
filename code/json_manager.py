@@ -67,7 +67,7 @@ def load_json(path):
     
     ret = change_list_to_dict(data)
     return ret
-
+    
 # -------------------------- debug
 def main() :
     #path = 'input.json'
