@@ -23,7 +23,7 @@ list_recipe_popup = []
 
 # save 관련 변수 ------------------------------
 path_tempdir = ''
-version_current = 1.1
+version_current = 0.1
 
 name_template_json = 'fmc_template.json'
 
@@ -85,7 +85,12 @@ class FCITEM:
                     name_item = self.name
                 item = map_item[name_item]
                 path = item.path_icon
-        return getTemplateDir() + "\\" + path
+        
+        # 경로가 슬래시로 시작하면 os.path.join에서 절대경로로 인식함...
+        while path[0] == '\\':
+            path = path[1:]
+            
+        return os.path.join(getTemplateDir(), path)
         
     def getIcon(self, x = 32, y = 32):
         pixmap = self.getPixmap(x, y)

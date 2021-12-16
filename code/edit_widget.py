@@ -210,6 +210,7 @@ class EditWidget(QWidget):
                 = str(type(self.elem).__name__)[4:] + ' ' + str(self.elem.id)
             self.edit_name.setText(self.elem.name)
         group_tree.tree_widget.updateItem(self.elem)
+        elem_manager.factories_changed = True
         
     def onGoalChanged(self):
         if self.elem is None:
@@ -219,6 +220,7 @@ class EditWidget(QWidget):
         self.elem.changeGoal(goal)
         group_tree.tree_widget.updateItem(self.elem)
         self.setElem(self.elem, bUpdateItem=True)
+        elem_manager.factories_changed = True
         
     def onFacNumChanged(self):
         if self.elem is None:
@@ -227,6 +229,7 @@ class EditWidget(QWidget):
         self.elem.changeFacNum(facNum)
         group_tree.tree_widget.updateItem(self.elem)
         self.setElem(self.elem, bUpdateItem=True)
+        elem_manager.factories_changed = True
         
     def onBeaconChagned(self):
         if self.elem is None:
@@ -235,11 +238,13 @@ class EditWidget(QWidget):
         self.elem.changeBeaconNum(num_beacon)
         group_tree.tree_widget.updateItem(self.elem)
         self.setElem(self.elem, bUpdateItem=True)
+        elem_manager.factories_changed = True
         
     def onClickDelete(self):
         self.elem.deleteElem()
         group_tree.tree_widget.elem_group.updateGroupInOut()
         group_tree.tree_widget.rebuildTree()
+        elem_manager.factories_changed = True
 
 class GridIcon(QVBoxLayout):
     def __init__(self):
@@ -315,6 +320,7 @@ class GridIcon(QVBoxLayout):
             item = item_manager.map_item[dlg.selected]
             edit_widget.elem.changeItem(item)
             edit_widget.setElem(edit_widget.elem, True)
+            elem_manager.factories_changed = True
         
     def onClickRecipe(self):
         global edit_widget
@@ -337,6 +343,7 @@ class GridIcon(QVBoxLayout):
             recipe = item_manager.map_recipe[dlg.selected]
             edit_widget.elem.changeRecipe(recipe, bItemChange=False)
             edit_widget.setElem(edit_widget.elem, True)
+            elem_manager.factories_changed = True
         
     def onClickFactory(self):
         global edit_widget
@@ -355,6 +362,7 @@ class GridIcon(QVBoxLayout):
             edit_widget.elem.changeFactory(factory)
             edit_widget.setElem(self.elem, True)
             group_tree.tree_widget.updateItem(self.elem)
+            elem_manager.factories_changed = True
         
     def setEnabled(self, bEnable, bGroup = False):
         if bEnable:
@@ -468,6 +476,7 @@ class GridModule(QGridLayout):
         elem.changeModule(list_module, bFillFirst=True)
         edit_widget.setElem(elem)
         group_tree.tree_widget.updateItem(elem)
+        elem_manager.factories_changed = True
         
     def onClickItem(self):
         global edit_widget
@@ -493,6 +502,7 @@ class GridModule(QGridLayout):
             elem.changeModule(list_module)
             edit_widget.setElem(elem)
             group_tree.tree_widget.updateItem(elem)
+            elem_manager.factories_changed = True
             
 def init_grid_item_list(grid, list_item):
     for i in reversed(range(grid.count())): 
