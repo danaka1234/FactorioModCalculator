@@ -5,7 +5,7 @@ import random   #https://docs.python.org/ko/3/library/random.html
 import queue    #https://docs.python.org/ko/3.8/library/queue.html
                 #http://www.daleseo.com/python-priority-queue
 import item_manager, common_func
-import json_manager, config_manager, template_manager
+import json_manager, config_manager, item_manager
 
 map_elem = dict()
 map_link = dict()
@@ -866,13 +866,13 @@ def save_elem():
         'link'      : map_l
     }
     
-    path_template_dir = template_manager.getTemplateDir()
+    path_template_dir = item_manager.getTemplateDir()
     path_elem_json = os.path.join(path_template_dir, name_elem_json)
     json_manager.save_json(path_elem_json, map)
     
 def load_elem():
     global map_elem, map_link
-    path_template_dir = template_manager.getTemplateDir()
+    path_template_dir = item_manager.getTemplateDir()
     path_elem_json = os.path.join(path_template_dir, name_elem_json)
     map = json_manager.load_json(path_elem_json)
     if map is None:

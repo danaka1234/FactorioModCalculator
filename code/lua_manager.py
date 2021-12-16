@@ -149,9 +149,9 @@ def make_locale(path):
     locale2 = config_manager.get_config('template', 'language_2nd')
     
     path_base = os.path.join(path, 'data', 'base')
-    path_locale = path_base + '\\locale'
-    path_locale1 = path_locale + '\\' + locale1
-    path_locale2 = path_locale + '\\' + locale2
+    path_locale = os.path.join(path_base, 'locale')
+    path_locale1 = os.path.join(path_locale, locale1)
+    path_locale2 = os.path.join(path_locale, locale2)
     
     #init locale
     list_path_locale = [    \
@@ -163,7 +163,7 @@ def make_locale(path):
         if os.path.isdir(elem[0]):
             list_item_path = os.listdir(elem[0])
             for path_file in list_item_path:
-                path = elem[0] + '\\' + path_file
+                path = os.path.join(elem[0], path_file)
                 parse_locale(path, elem[1])
 
 def fluid_str_to_float(str_fluid):
@@ -368,8 +368,8 @@ def main() :
 
     load_vanilla(path_factorio)
     
-    import template_manager
-    template_manager.cleanTemplateDir()
+    import item_manager
+    item_manager.cleanTemplateDir()
     
     make_item_group()
     make_item()
@@ -383,8 +383,8 @@ def main() :
     item_manager.sortRecipe()
     item_manager.copyIcon()
     
-    template_manager.copyDefaultIcon()
-    template_manager.saveTemplateFile()
+    item_manager.copyDefaultIcon()
+    item_manager.saveTemplateFile()
         
     # Common Post Process
     import elem_manager

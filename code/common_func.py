@@ -1,6 +1,6 @@
 # coding: utf-8
 import os, traceback
-import option_widget, template_manager
+import option_widget, item_manager
 import item_manager
 
 from PyQt5.QtGui        import QPixmap
@@ -48,17 +48,17 @@ def getEnergyRound(amount, num_for_round = 3):
 def getCommonPath(name):
     path = ''
     if name == 'clock':
-        path = os.path.join(template_manager.getTemplateDir(), template_manager.name_clock)
+        path = os.path.join(item_manager.getTemplateDir(), item_manager.name_clock)
     elif name == 'factorio':
-        path = os.path.join(template_manager.getTemplateDir(), template_manager.name_fac_icon)
+        path = os.path.join(item_manager.getTemplateDir(), item_manager.name_fac_icon)
     elif name == 'electric':
-        path = os.path.join(template_manager.getTemplateDir(), template_manager.name_electric_icon)
+        path = os.path.join(item_manager.getTemplateDir(), item_manager.name_electric_icon)
     elif name == 'fuel':
-        path = os.path.join(template_manager.getTemplateDir(), template_manager.name_fuel_icon)
+        path = os.path.join(item_manager.getTemplateDir(), item_manager.name_fuel_icon)
     elif name == 'factory':
-        path = os.path.join(template_manager.getTemplateDir(), \
+        path = os.path.join(item_manager.getTemplateDir(), \
             'graphics','icons', \
-            template_manager.name_factory_icon)
+            item_manager.name_factory_icon)
     return path
     
 def getCommonPixmap(name, x = 32, y = 32):

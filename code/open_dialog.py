@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import QLabel, QCheckBox, QLineEdit, QPushButton
 from PyQt5.QtWidgets import QScrollArea, QGroupBox, QRadioButton
 #https://wikidocs.net/35486 radio button
 
-import config_manager, template_manager
+import config_manager, item_manager
 
 #https://doc.qt.io/qtforpython/PySide2/QtWidgets/QDialog.html
 class OpenDialog(QDialog):

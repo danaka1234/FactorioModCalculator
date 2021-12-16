@@ -17,7 +17,7 @@ from PyQt5.QtWidgets    import QWidget, QTabWidget, QGridLayout, QCheckBox, QCom
 from PyQt5.QtWidgets    import QPushButton, QLabel
 
 import config_manager, log_manager
-import open_dialog, template_manager, elem_manager, item_manager
+import open_dialog, item_manager, elem_manager, item_manager
 import loading_widget, option_widget
 
 import group_tree, edit_widget, elem_manager

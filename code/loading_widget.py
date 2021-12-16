@@ -12,7 +12,7 @@ from PyQt5.QtCore       import QThread, pyqtSignal
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout
 from PyQt5.QtWidgets import QLabel, QProgressBar
 
-import config_manager, main_window, template_manager, lua_manager, item_manager, elem_manager
+import config_manager, main_window, item_manager, lua_manager, item_manager, elem_manager
 import option_widget
 '''
 QProgressBar, QThread
@@ -155,7 +155,7 @@ class LoadingWidget(QWidget):
             
             main.list_sub.append(\
                 LoadRapperSub('Clean Template Dir', \
-                    template_manager.cleanTemplateDir))
+                    item_manager.cleanTemplateDir))
             
             main.list_sub.append(\
                 LoadRapperSub('Doing make_item_group', \
@@ -203,11 +203,11 @@ class LoadingWidget(QWidget):
             
             main.list_sub.append(\
                 LoadRapperSub('Copy Default Icon', \
-                    template_manager.copyDefaultIcon))
+                    item_manager.copyDefaultIcon))
             
             main.list_sub.append(\
                 LoadRapperSub('Save Template', \
-                    template_manager.saveTemplateFile))
+                    item_manager.saveTemplateFile))
                     
             main.list_sub.append(\
                 LoadRapperSub('Save Option', \
@@ -219,7 +219,7 @@ class LoadingWidget(QWidget):
             
             main.list_sub.append(\
                 LoadRapperSub('Load Template From Dir', \
-                    template_manager.loadTemplateFromDir, \
+                    item_manager.loadTemplateFromDir, \
                     [self, path_template_dir]))
                     
             main.list_sub.append(\
