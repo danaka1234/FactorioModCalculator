@@ -198,6 +198,8 @@ class Elem:
             map_p[item[0]] = ElemProduct.fromMap(item[1])
         for item in map['map_material'].items():
             map_m[item[0]] = ElemMaterial.fromMap(item[1])
+        elem.map_product = map_p
+        elem.map_material = map_m
         elem.group = None
         
         return elem
@@ -897,9 +899,6 @@ def load_elem():
             g = map_elem[id_group]
             e.group = g
             g.list_child.append(e)
-    
-def onExit_elem():
-    save_elem()
     
 def initElemManager():
     global map_elem, factories_changed

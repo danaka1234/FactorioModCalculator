@@ -21,6 +21,7 @@ import math
 head_id = 2
 
 tree_widget = None
+modify_widget = None
 
 class GroupTreeWidget(QTreeWidget):
     def __init__(self):
@@ -57,13 +58,19 @@ class GroupTreeWidget(QTreeWidget):
         
     def onItemChanged(self, current, previous):
         item = current
+        elem = None
         if item is None:
             edit_widget.edit_widget.resetInfo()
-            return
         else:
             id = int(item.data(head_id, 0))
             elem = elem_manager.map_elem[id]
             edit_widget.edit_widget.setElem(elem)
+        
+        global modify_widget
+        bEnable = \
+            type(elem) == elem_manager.ElemGroup \
+            and elem != self.elem_group
+        modify_widget.bt_goInto.setEnabled( bEnable )
             
     def setCurrentSelect(self, elem):
         head = self.topLevelItem(0)

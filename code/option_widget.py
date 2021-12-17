@@ -116,6 +116,8 @@ class OptionWidget(QWidget):
             icon_size = 16
         
         group_tree.tree_widget.rebuildTree()
+        global option_changed
+        option_changed = True
         
     def timeChanged(self):
         global time_config
@@ -130,7 +132,8 @@ class OptionWidget(QWidget):
             time_config = 0
             
         group_tree.tree_widget.rebuildTree()
-        
+        global option_changed
+        option_changed = True
 
 # -------------------------- debug
 def main() :

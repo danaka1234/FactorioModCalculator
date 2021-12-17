@@ -22,8 +22,6 @@ import loading_widget, option_widget
 
 import group_tree, edit_widget, elem_manager
 
-modify_widget = None
-
 class MainWindow(QMainWindow):
     '''
     QMainWIndow 의 경우, layout 쓰면 already has a layout 에러 메시지가 뜨는 듯 함
@@ -112,8 +110,10 @@ class ModifyWidget(QWidget):
         self.initUI()
         self.setGroup(self.group)
         
-        global modify_widget
-        modify_widget = self
+        # 현재 모듈에 전역변수 작동 안함... 읻단 다른 모듈에 넣어보자
+        #global modify_widget
+        #modify_widget = self
+        group_tree.modify_widget = self
     
     def initUI(self):
         vbox = QVBoxLayout()
@@ -127,6 +127,8 @@ class ModifyWidget(QWidget):
         self.bt_goInto = QPushButton('Go into')
         grid.addWidget(self.bt_goOut,   0, 2)
         grid.addWidget(self.bt_goInto,  0, 3)
+        self.bt_goOut.setEnabled(False)
+        self.bt_goInto.setEnabled(False)
         
         self.bt_addGroup = QPushButton('Add Group')
         self.bt_addFactory = QPushButton('Add Factory')
@@ -154,6 +156,8 @@ class ModifyWidget(QWidget):
         self.bt_addFactory.clicked.connect(group_tree.tree_widget.addFactory)
         self.bt_edit.clicked.connect(self.toggleEditWidget)
         self.bt_option.clicked.connect(self.toggleOptionWidget)
+        self.bt_goOut.clicked.connect(self.goGroupOut)
+        self.bt_goInto.clicked.connect(self.goGroupInto)
         
         self.setLayout(vbox)
         
@@ -165,32 +169,45 @@ class ModifyWidget(QWidget):
         group_tree.tree_widget.setTreeRootGroup(group)
 
     def toggleEditWidget(self):
-        global modify_widget
+        if group_tree.modify_widget is None:
+            return
+            
         if edit_widget.edit_widget.isVisible():
-            if modify_widget is not None:
-                modify_widget.bt_edit.setText("Show\nEdit")
+            group_tree.modify_widget.bt_edit.setText("Show\nEdit")
             edit_widget.edit_widget.hide()
         else:
-            if modify_widget is not None:
-                modify_widget.bt_edit.setText("Hide\nEdit")
+            group_tree.modify_widget.bt_edit.setText("Hide\nEdit")
             edit_widget.edit_widget.show()
     
     def toggleOptionWidget(self):
-        global modify_widget
+        if group_tree.modify_widget is None:
+            return
+            
         if option_widget.option_widget.isVisible():
-            if modify_widget is not None:
-                modify_widget.bt_option.setText("Show\nOption")
+            group_tree.modify_widget.bt_option.setText("Show\nOption")
             option_widget.option_widget.hide()
         else:
-            if modify_widget is not None:
-                modify_widget.bt_option.setText("Hide\nOption")
+            group_tree.modify_widget.bt_option.setText("Hide\nOption")
             option_widget.option_widget.show()
+        
+    def goGroupOut(self):
+        group = group_tree.tree_widget.elem_group
+        if group is None or group.group is None:
+            return
+        self.setGroup(group.group)
+            
+    def goGroupInto(self):
+        elem = edit_widget.edit_widget.elem
+        if elem is None or type(elem) != elem_manager.ElemGroup:
+            return
+        self.setGroup(elem)
 
 # 순서가 중요할 수 있으므로 여기에 모두 쓰자...
 # 등록 역순으로 실행되는 것으로 보인다. 스택인듯?
 def register_onExit():
     atexit.register(log_manager.onExit_log)
-    atexit.register(elem_manager.onExit_elem)
+    atexit.register(elem_manager.save_elem)
+    atexit.register(option_widget.save_option)
 
 # --------------------------- debug
 if __name__ == '__main__':
