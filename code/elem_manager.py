@@ -4,7 +4,7 @@ import sys, math, os
 import random   #https://docs.python.org/ko/3/library/random.html
 import queue    #https://docs.python.org/ko/3.8/library/queue.html
                 #http://www.daleseo.com/python-priority-queue
-import item_manager, common_func
+import item_manager, common_func, option_widget
 import json_manager, config_manager, item_manager
 
 map_elem = dict()
@@ -124,7 +124,7 @@ class Elem:
         self.y = 0
         self.name = str(type(self).__name__)[4:] + ' ' + str(self.id)
         self.item_goal = None
-        self.num_factory = 0    # 공장 개수 = 모듈 비율, 시간 적용한 것
+        self.num_factory = 1    # 공장 개수 = 모듈 비율, 시간 적용한 것
         self.order = ''
         
         self.energy = 0
@@ -735,61 +735,16 @@ class ElemGroup(Elem):
         
         for child in self.list_child:
             child.delElem()
+        #TODO : 처리. 링크 제거?
     
     def changeItem(self, item):
         self.item_goal = item
         
-    #list_args = [name_product, goal_per_sec, list_factory, list_module, ratio_beacon]
-    '''
-    def initGroup(self, args):
-        global map_elem
-        name_product    = args[0]
-        goal_per_sec    = args[1]
-        list_factory    = args[2]
-        list_module     = args[3]
-        ratio_beacon    = args[4]
-        
-        item_goal = item_manager.map_item[name_product]
-        self.item_goal = item_goal
-        self.num_goal = goal_per_sec
-        self.num_factory = 1
-        
-        #root가 factory 일 때만 고려한다
-        node_root = ElemFactory(None, self, item_goal, goal_per_sec \
-            , list_factory, list_module, ratio_beacon)
-        self.id_root = node_root.id
-    
-        # ----- make graph - DFS
-        node_root.makeGraphByDFS(self, dict(), 0, list_factory, list_module, ratio_beacon)
-        
-        # ----- product, material의 goal, num 초기화
-        for child in self.list_child:
-            child.clearGoalNeed()
-        node_root.addGoal(item_goal.name, goal_per_sec)
-        
-        # ----- update num_goal/ratio
-        q = queue.SimpleQueue()
-        m = dict()
-        q.put(node_root)
-        m[node_root.id] = node_root
-        
-        while(not q.empty()):
-            node = q.get()
-            node.updateAllBySumGoal()
-            node.updateNumGoalBySumGoal()
-            node.updateFactoryNum()
-            
-            for key in node.map_material.keys():
-                material = node.map_material[key]
-                for link in material.list_link:
-                    if not m.get(link.producer.id):
-                        elem_child = map_elem[link.producer.id]
-                        m[link.producer.id] = elem_child
-                        q.put(elem_child)
-                     
-        # ----- update self
+    def changeFacNum(self, num_factory):
+        if self.num_factory == num_factory: return
+        self.num_factory = num_factory
         self.updateGroupInOut()
-    '''
+        
     def updateGroupInOut(self):
         map_all = {}
         
@@ -826,30 +781,19 @@ class ElemGroup(Elem):
         self.map_product = {}
         self.map_material = {}
         for name in map_all:
-            num = map_all[name]
-            if   num > 0: #생산
+            num = map_all[name] * self.num_factory
+            if abs(num) < option_widget.min_ignore:
+                continue
+            elif num > 0: #생산
                 self.map_product[name] = ElemProduct(name, num, num)
             elif num < 0: #소비
                 num = -num
                 self.map_material[name] = ElemMaterial(name, num)
             else:
                 continue
-    '''
-    def updateDown(self, bNumber = False, bLevel = False, bLink = False, bUpdateGroup = False):
-        #map_material = {}
-        #map_product  = {}
-        
-        #link, level, number 순 업데이트
-        if bLink:   #link Update
-            pass
-            
-        if bLevel:  #level Update
-            pass
-            
-        if bNumber:    #number Update
-            node_root = map_elem[self.id_root]
-            node_root.updateDown(True)
-    '''
+                
+        if self.group is not None:
+            self.group.updateGroupInOut()
     
 def save_elem():
     global map_elem, map_link, factories_changed

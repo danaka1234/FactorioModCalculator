@@ -13,9 +13,12 @@ ComboBOx : https://doc.qt.io/qtforpython/PySide6/QtWidgets/QComboBox.html
 option_widget = None
 
 #for project option
+# --- global
 expensive = False
-icon_size = 16
 time_config = 1
+# --- tree
+icon_size = 16
+min_ignore = 0.0001
 
 #sub data
 time_set = [1, 60, 3600]
@@ -39,13 +42,15 @@ def load_option():
         str_temp = file.read()
     dic_opt = json.loads(str_temp)
     
-    global expensive, icon_size, time_config
+    global expensive, icon_size, time_config, min_ignore
     if dic_opt.get('expensive') is not None :
         expensive = dic_opt['expensive']
     if dic_opt.get('icon_size') is not None :
         icon_size = dic_opt['icon_size']
     if dic_opt.get('time_config') is not None :
         time_config = dic_opt['time_config']
+    if dic_opt.get('min_ignore') is not None :
+        min_ignore = dic_opt['min_ignore']
         
 def save_option():
     global option_changed
@@ -53,11 +58,12 @@ def save_option():
         return
         
     # 옵션 추가시 여기서 처리...
-    global expensive, icon_size, time_config
+    global expensive, icon_size, time_config, min_ignore
     dic_opt = {
         'expensive':expensive,
         'icon_size':icon_size,
         'time_config':time_config,
+        'min_ignore':min_ignore,
     }
     str_temp = json.dumps(dic_opt, indent=4)
     

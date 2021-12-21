@@ -8,6 +8,7 @@ from PyQt5.QtWidgets    import QTreeWidget, QTreeWidgetItem, QHeaderView
 
 from PyQt5.QtWidgets    import QGridLayout
 from PyQt5.QtWidgets    import QWidget, QLabel
+from PyQt5.QtCore       import Qt
 
 #draw
 from PyQt5.QtGui        import QIcon, QPixmap
@@ -18,7 +19,7 @@ import edit_widget, common_func
 
 import math
 
-head_id = 2
+column_id = 2
 
 tree_widget = None
 modify_widget = None
@@ -62,7 +63,7 @@ class GroupTreeWidget(QTreeWidget):
         if item is None:
             edit_widget.edit_widget.resetInfo()
         else:
-            id = int(item.data(head_id, 0))
+            id = int(item.data(column_id, 0))
             elem = elem_manager.map_elem[id]
             edit_widget.edit_widget.setElem(elem)
         
@@ -78,7 +79,7 @@ class GroupTreeWidget(QTreeWidget):
         item = None
         for i in range(0, cnt):
             tmp = head.child(i)
-            id = int(tmp.data(head_id, 0))
+            id = int(tmp.data(column_id, 0))
             if id == elem.id:
                 item = tmp
         if item is not None:
@@ -303,10 +304,13 @@ class ElemTreeItem(QTreeWidgetItem):
         treeWidget = self.treeWidget()
         treeWidget.setItemWidget(self, 0, widget_icon)
         self.setText(1, elem.name)
-        self.setText(head_id, str(elem.id))
+        self.setText(column_id, str(elem.id))
         treeWidget.setItemWidget(self, 3, widget_material)
         treeWidget.setItemWidget(self, 4, widget_product)
         treeWidget.setItemWidget(self, 5, widget_factory)
         treeWidget.setItemWidget(self, 6, widget_module)
         treeWidget.setItemWidget(self, 7, widget_etc)
+        
+        if type(elem) == elem_manager.ElemGroup :
+            self.setBackground(0, Qt.gray);
         
