@@ -386,7 +386,7 @@ class ElemFactory(Elem):
         map['beacon'] = self.beacon
         map['level'] = self.level
         
-        map['speed'] = self.num_goal
+        map['speed'] = self.speed
         map['productivity'] = self.productivity
         map['consumption'] = self.consumption
         map['pollution'] = self.pollution
