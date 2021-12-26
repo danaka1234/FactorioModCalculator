@@ -21,6 +21,7 @@ option_widget = None
 expensive = False
 time_config = 1
 min_ignore = 0.0001
+mine_product = 0
 # --- tree
 icon_size = 16
 tree_num_max = 5
@@ -49,14 +50,17 @@ def load_option():
         str_temp = file.read()
     dic_opt = json.loads(str_temp)
     
-    global expensive, time_config, min_ignore
+    global expensive, time_config, min_ignore, mine_product
     global icon_size, tree_num_max, is_tree_num_right, is_tree_expend_right
     if dic_opt.get('expensive') is not None :
         expensive = dic_opt['expensive']
     if dic_opt.get('time_config') is not None :
         time_config = dic_opt['time_config']
+    if dic_opt.get('mine_product') is not None :
+        mine_product = dic_opt['mine_product']
     if dic_opt.get('min_ignore') is not None :
         min_ignore = dic_opt['min_ignore']
+        
     if dic_opt.get('icon_size') is not None :
         icon_size = dic_opt['icon_size']
     if dic_opt.get('tree_num_max') is not None :
@@ -77,6 +81,7 @@ def save_option():
     dic_opt = {
         'expensive':expensive,
         'time_config':time_config,
+        'mine_product':mine_product,
         'min_ignore':min_ignore,
         'icon_size':icon_size,
         'tree_num_max':tree_num_max,
@@ -101,7 +106,7 @@ class OptionWidget(QWidget):
         option_widget = self
     
     def initUI(self, name):
-        global time_config, expensive, min_ignore
+        global time_config, expensive, min_ignore, mine_product
         global icon_size, tree_col, tree_row, is_tree_num_right, is_tree_expend_right
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -120,27 +125,40 @@ class OptionWidget(QWidget):
         grid_global = QGridLayout()
         group_global.setLayout(grid_global)
         vbox_main.addWidget(group_global)
-            
+        
+        row_global = 0
         self.comboTime = QComboBox()
         self.comboTime.insertItems(0, ['sec', 'min', 'hr'])
         self.comboTime.setCurrentIndex(time_config)
-        self.comboTime.currentIndexChanged.connect(self.timeChanged)
-        grid_global.addWidget(QLabel('Time'), 0, 0)
-        grid_global.addWidget(self.comboTime, 0, 1)
+        self.comboTime.currentIndexChanged.connect(self.treeViewChanged)
+        grid_global.addWidget(QLabel('Time'), row_global, 0)
+        grid_global.addWidget(self.comboTime, row_global, 1)
+        row_global += 1
         
         self.checkExpensive = QCheckBox()
         self.checkExpensive.setCheckState(expensive)
-        self.checkExpensive.stateChanged.connect(self.expensiveChanged)
-        grid_global.addWidget(QLabel('Expensive'), 1, 0)
-        grid_global.addWidget(self.checkExpensive, 1, 1)
+        self.checkExpensive.stateChanged.connect(self.factoryChanged)
+        grid_global.addWidget(QLabel('Expensive'), row_global, 0)
+        grid_global.addWidget(self.checkExpensive, row_global, 1)
+        row_global += 1
+        
+        self.editMine = QLineEdit()
+        self.editMine.setFixedWidth(60)
+        self.editMine.setText(str(mine_product))
+        self.editMine.setValidator(QIntValidator())
+        self.editMine.editingFinished.connect(self.resourceChanged)
+        grid_global.addWidget(QLabel('Mining productivity'), row_global, 0, 1, -1)
+        grid_global.addWidget(self.editMine, row_global+1, 1)
+        row_global += 2
         
         self.editIgnore = QLineEdit()
         self.editIgnore.setFixedWidth(60)
         self.editIgnore.setText(str(min_ignore))
         self.editIgnore.setValidator(QDoubleValidator())
-        self.editIgnore.editingFinished.connect(self.ignoreChanged)
-        grid_global.addWidget(QLabel('Min Number'), 2,0)
-        grid_global.addWidget(self.editIgnore, 2, 1)
+        self.editIgnore.editingFinished.connect(self.factoryChanged)
+        grid_global.addWidget(QLabel('Min Number'), row_global,0)
+        grid_global.addWidget(self.editIgnore, row_global, 1)
+        row_global += 1
         
         #tree
         #if name == 'tree':
@@ -153,7 +171,7 @@ class OptionWidget(QWidget):
         self.editTreeIconSize.setFixedWidth(60)
         self.editTreeIconSize.setText(str(icon_size))
         self.editTreeIconSize.setValidator(QIntValidator())
-        self.editTreeIconSize.editingFinished.connect(self.treeIconChanged)
+        self.editTreeIconSize.editingFinished.connect(self.treeViewChanged)
         grid_tree.addWidget(QLabel('Icon Size'), 0, 0)
         grid_tree.addWidget(self.editTreeIconSize, 0, 1)
         
@@ -166,33 +184,38 @@ class OptionWidget(QWidget):
         self.widgetTreeDetail.setVisible(False)
         grid_tree.addWidget(btTreeDetail, 1, 0, 1, -1)
         grid_tree.addWidget(self.widgetTreeDetail, 2, 0, 1, -1)
+        row_tree = 0
         
         self.checkTreeNumberRight = QCheckBox()
         check = Qt.Checked if is_tree_num_right else Qt.Unchecked
         self.checkTreeNumberRight.setCheckState(check)
-        self.checkTreeNumberRight.stateChanged.connect(self.treeIconChanged)
-        grid_treeDetail.addWidget(QLabel('Number Right'), 0, 0)
-        grid_treeDetail.addWidget(self.checkTreeNumberRight, 0, 1)
+        self.checkTreeNumberRight.stateChanged.connect(self.treeViewChanged)
+        grid_treeDetail.addWidget(QLabel('Draw Number Right'), row_tree, 0, 1, -1)
+        grid_treeDetail.addWidget(self.checkTreeNumberRight, row_tree+1, 1)
+        row_tree += 2
         
         self.checkTreeExpendRight = QCheckBox()
         check = Qt.Checked if is_tree_expend_right else Qt.Unchecked
         self.checkTreeExpendRight.setCheckState(check)
-        self.checkTreeExpendRight.stateChanged.connect(self.treeIconChanged)
-        grid_treeDetail.addWidget(QLabel('Expend Right'), 1, 0)
-        grid_treeDetail.addWidget(self.checkTreeExpendRight, 1, 1)
+        self.checkTreeExpendRight.stateChanged.connect(self.treeViewChanged)
+        grid_treeDetail.addWidget(QLabel('Expend Item Right'), row_tree, 0, 1, -1)
+        grid_treeDetail.addWidget(self.checkTreeExpendRight, row_tree+1, 1)
+        row_tree += 2
         
         self.editTreeIconNum = QLineEdit()
         self.editTreeIconNum.setFixedWidth(60)
         self.editTreeIconNum.setText(str(tree_num_max))
         self.editTreeIconNum.setValidator(QIntValidator())
-        self.editTreeIconNum.editingFinished.connect(self.treeIconChanged)
-        grid_treeDetail.addWidget(QLabel('Num Max'), 2, 0)
-        grid_treeDetail.addWidget(self.editTreeIconNum, 2, 1)
+        self.editTreeIconNum.editingFinished.connect(self.treeViewChanged)
+        grid_treeDetail.addWidget(QLabel('Num Max'), row_tree, 0)
+        grid_treeDetail.addWidget(self.editTreeIconNum, row_tree, 1)
+        row_tree += 1
         
         vbox_main.addStretch(1)
             
-    def treeIconChanged(self):
+    def treeViewChanged(self):
         global icon_size, tree_num_max, is_tree_num_right, is_tree_expend_right
+        global time_config
         global option_changed
         
         icon_size = int(self.editTreeIconSize.text())
@@ -207,16 +230,7 @@ class OptionWidget(QWidget):
         if tree_num_max <= 0 :
             tree_col = 5
             self.editTreeIconCol.setText(str(tree_num_max))
-        
-        group_tree.tree_widget.rebuildTree()
-        option_changed = True
-        
-    def clickwidgetTreeDetail(self):
-        visible = self.widgetTreeDetail.isVisible()
-        self.widgetTreeDetail.setVisible(not visible)
-        
-    def timeChanged(self):
-        global time_config
+            
         idx = self.comboTime.currentIndex ()
         if idx == 0:
             time_config = 0
@@ -226,26 +240,36 @@ class OptionWidget(QWidget):
             time_config = 2
         else:
             time_config = 0
-            
-        group_tree.tree_widget.rebuildTree()
-        global option_changed
+        
+        group_tree.tree_widget.rebuildTree(True)
         option_changed = True
         
-    def expensiveChanged(self):
-        global expensive
+    def factoryChanged(self):
+        global expensive, min_ignore, option_changed
         expensive = self.checkExpensive.checkState()
-        group_tree.tree_widget.rebuildTree()
-        option_changed = True
-        
-    def ignoreChanged(self):
-        global min_ignore, option_changed
         min_ignore = float(self.editIgnore.text())
         if min_ignore <= 0 :
             min_ignore = 0.0001
             self.editIgnore.setText(str(min_ignore))
         
-        group_tree.tree_widget.rebuildTree()
+        #TODO : 팩도리 변경 추가하기...
+        group_tree.tree_widget.rebuildTree(True)
         option_changed = True
+        
+    def resourceChanged(self):
+        global mine_product
+        mine_product = int(self.editMine.text())
+        if mine_product < 0 :
+            mine_product = 0
+            self.editMine.setText(str(mine_product))
+            
+        elem_manager.resourceChanged()
+        group_tree.tree_widget.rebuildTree(True)
+        option_changed = True
+        
+    def clickwidgetTreeDetail(self):
+        visible = self.widgetTreeDetail.isVisible()
+        self.widgetTreeDetail.setVisible(not visible)
         
 # -------------------------- debug
 def main() :

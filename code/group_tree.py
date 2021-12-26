@@ -89,7 +89,9 @@ class GroupTreeWidget(QTreeWidget):
         self.elem_group = elem_group
         self.rebuildTree()
         
-    def rebuildTree(self):
+    def rebuildTree(self, keep_sel = False):
+        if keep_sel:
+            elem = edit_widget.edit_widget.elem
         self.clear()
         item_group = ElemTreeItem(self, self.elem_group, None)
         
@@ -102,6 +104,9 @@ class GroupTreeWidget(QTreeWidget):
             
         self.expandAll ()
         self.resizeAll()
+        
+        if keep_sel:
+            edit_widget.edit_widget.setElem(elem)
         
     def updateItem(self, elem, bUpdateGroup = True):
         item_group = self.topLevelItem(0)
