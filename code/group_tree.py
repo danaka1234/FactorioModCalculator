@@ -159,11 +159,11 @@ class ElemTreeItem(QTreeWidgetItem):
         self.update()
         
     def makeListIcon(self, grid, map, iconSize):
-        bBig = (iconSize >= 32)
+        expend_right = option_widget.is_tree_expend_right
+        num_right = option_widget.is_tree_num_right
+        num_max = option_widget.tree_num_max
         list_key = list(map.keys())
-        column_max = 3
-        if bBig:
-            column_max = 5
+        
         for i in range(0, len(list_key)):
             key = list_key[i]
             elemSub = map[key]
@@ -178,24 +178,34 @@ class ElemTreeItem(QTreeWidgetItem):
             label1 = QLabel()
             label1.setPixmap(item.getPixmap(iconSize, iconSize))
             label2 = QLabel(text)
-            if bBig:
-                y = int(i/column_max) * 2 + 1
-                x = i % column_max
-                grid.addWidget(label1, y, x)
-                grid.addWidget(label2, y+1, x)
+            
+            if expend_right:
+                y = int(i/num_max)
+                x = i % num_max
             else:
-                y = int(i/column_max)+ 1
-                x = i % column_max * 2
-                grid.addWidget(label1, y, x)
-                grid.addWidget(label2, y, x+1)
+                y = i % num_max
+                x = int(i/num_max)
                 
-        grid.setRowStretch(0,1)
-        if bBig:
-            grid.setRowStretch(math.ceil(len(list_key)/column_max)*2+1,1)
-            grid.setColumnStretch(column_max+1,1)
+            if num_right:
+                grid.addWidget(label1, y, x*2)
+                grid.addWidget(label2, y, x*2+1)
+            else:
+                y *= 2
+                grid.addWidget(label1, y*2  , x)
+                grid.addWidget(label2, y*2+1, x)
+        
+        if expend_right:
+            strech_col = num_max
+            strech_row = math.ceil(len(list_key)/num_max)
         else:
-            grid.setRowStretch(math.ceil(len(list_key)/column_max)+1,1)
-            grid.setColumnStretch(column_max*2+1,1)
+            strech_col = math.ceil(len(list_key)/num_max)
+            strech_row = num_max
+            
+        if num_right:       strech_col *= 2
+        else:               strech_row *= 2
+        
+        grid.setColumnStretch(strech_col, 1)
+        grid.setRowStretch(strech_row, 1)
             
     def update(self):
         elem = self.elem
