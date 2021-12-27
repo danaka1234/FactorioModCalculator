@@ -6,15 +6,15 @@ import copy
 
 #core
 from PyQt5.QtCore       import QSize
-from PyQt5.QtWidgets    import QWidget, QFrame, QWidgetItem, QTabWidget
+from PyQt5.QtWidgets    import QWidget, QFrame, QWidgetItem
 
 #draw
 from PyQt5.QtGui       import QPixmap, QIcon
 
 #layout
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout
-from PyQt5.QtWidgets import QCheckBox, QLabel, QLineEdit, QGroupBox
-from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QPushButton, QMessageBox
+from PyQt5.QtWidgets import QLabel, QLineEdit, QGroupBox
+from PyQt5.QtWidgets import QPushButton, QMessageBox
 from PyQt5.QtGui     import QDoubleValidator, QIntValidator
 #https://www.delftstack.com/tutorial/pyqt5/pyqt-grid-layout/
 #grid layout 셀 합치기
@@ -204,13 +204,9 @@ class EditWidget(QWidget):
     def onNameChanged(self):
         if self.elem is None:
             return
-        self.elem.name = self.edit_name.text()
-        if self.elem.name is None or self.elem.name == '':
-            self.elem.name \
-                = str(type(self.elem).__name__)[4:] + ' ' + str(self.elem.id)
-            self.edit_name.setText(self.elem.name)
+        self.elem.changeName( self.edit_name.text() )
+        self.edit_name.setText(self.elem.name)
         group_tree.tree_widget.updateItem(self.elem)
-        elem_manager.factories_changed = True
         
     def onGoalChanged(self):
         if self.elem is None:
@@ -220,7 +216,6 @@ class EditWidget(QWidget):
         self.elem.changeGoal(goal)
         group_tree.tree_widget.updateItem(self.elem)
         self.setElem(self.elem, bUpdateItem=True)
-        elem_manager.factories_changed = True
         
     def onFacNumChanged(self):
         if self.elem is None:
@@ -229,7 +224,6 @@ class EditWidget(QWidget):
         self.elem.changeFacNum(facNum)
         group_tree.tree_widget.updateItem(self.elem)
         self.setElem(self.elem, bUpdateItem=True)
-        elem_manager.factories_changed = True
         
     def onBeaconChagned(self):
         if self.elem is None:
@@ -238,13 +232,11 @@ class EditWidget(QWidget):
         self.elem.changeBeaconNum(num_beacon)
         group_tree.tree_widget.updateItem(self.elem)
         self.setElem(self.elem, bUpdateItem=True)
-        elem_manager.factories_changed = True
         
     def onClickDelete(self):
         self.elem.deleteElem()
         group_tree.tree_widget.elem_group.updateGroupInOut()
         group_tree.tree_widget.rebuildTree()
-        elem_manager.factories_changed = True
 
 class GridIcon(QVBoxLayout):
     def __init__(self):
@@ -320,7 +312,6 @@ class GridIcon(QVBoxLayout):
             item = item_manager.map_item[dlg.selected]
             edit_widget.elem.changeItem(item)
             edit_widget.setElem(edit_widget.elem, True)
-            elem_manager.factories_changed = True
         
     def onClickRecipe(self):
         global edit_widget
@@ -343,7 +334,6 @@ class GridIcon(QVBoxLayout):
             recipe = item_manager.map_recipe[dlg.selected]
             edit_widget.elem.changeRecipe(recipe, bItemChange=False)
             edit_widget.setElem(edit_widget.elem, True)
-            elem_manager.factories_changed = True
         
     def onClickFactory(self):
         global edit_widget
@@ -362,7 +352,6 @@ class GridIcon(QVBoxLayout):
             edit_widget.elem.changeFactory(factory)
             edit_widget.setElem(self.elem, True)
             group_tree.tree_widget.updateItem(self.elem)
-            elem_manager.factories_changed = True
         
     def setEnabled(self, bEnable, bGroup = False):
         if bEnable:
@@ -476,7 +465,6 @@ class GridModule(QGridLayout):
         elem.changeModule(list_module, bFillFirst=True)
         edit_widget.setElem(elem)
         group_tree.tree_widget.updateItem(elem)
-        elem_manager.factories_changed = True
         
     def onClickItem(self):
         global edit_widget
@@ -502,7 +490,6 @@ class GridModule(QGridLayout):
             elem.changeModule(list_module)
             edit_widget.setElem(elem)
             group_tree.tree_widget.updateItem(elem)
-            elem_manager.factories_changed = True
             
 def init_grid_item_list(grid, list_item):
     for i in reversed(range(grid.count())): 
