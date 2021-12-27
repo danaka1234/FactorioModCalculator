@@ -1,8 +1,7 @@
 ﻿# coding: utf-8
 
 import sys
-import traceback
-import copy
+from functools import partial 
 
 #core
 from PyQt5.QtCore       import QSize
@@ -58,11 +57,8 @@ class EditWidget(QWidget):
         self.grid_module = GridModule()
         grid1.addLayout(self.grid_module, 0, 1)
         
-        grid1.setRowStretch(0, 1)
-        grid1.setRowStretch(1, 1)
-        grid1.setColumnStretch(0, 1)
-        grid1.setColumnStretch(1, 1)
-        
+        grid1.setRowStretch(2, 1)
+        grid1.setColumnStretch(2, 1)
         #------------------------- grid_info
         self.grid_icon = GridIcon()
         grid_info.addLayout(self.grid_icon, 0, 0, 1, 2)
@@ -72,6 +68,9 @@ class EditWidget(QWidget):
         grid_info.addWidget(QLabel('Goal')      , 3, 0)
         grid_info.addWidget(QLabel('Factories') , 4, 0)
         grid_info.addWidget(QLabel('Beacon(%)') , 5, 0)
+        grid_info.addWidget(QLabel('Power')     , 6, 0)
+        grid_info.addWidget(QLabel('Fuel')      , 7, 0)
+        grid_info.addWidget(QLabel('Pollution') , 8, 0)
         
         self.edit_name = QLineEdit()
         self.edit_name.setFixedWidth(80)
@@ -88,18 +87,31 @@ class EditWidget(QWidget):
         self.edit_beacon = QLineEdit()
         self.edit_beacon.setFixedWidth(80)
         self.edit_beacon.setValidator(QDoubleValidator())
-        self.edit_beacon.editingFinished.connect(self.onBeaconChagned)
+        self.edit_beacon.editingFinished.connect(self.onBeaconChanged)
+        self.edit_power = QLineEdit()
+        self.edit_power.setFixedWidth(80)
+        self.edit_power.setValidator(QDoubleValidator())
+        self.edit_power.editingFinished.connect(self.onEditCustomEtc)
+        self.edit_fuel = QLineEdit()
+        self.edit_fuel.setFixedWidth(80)
+        self.edit_fuel.setValidator(QDoubleValidator())
+        self.edit_fuel.editingFinished.connect(self.onEditCustomEtc)
+        self.edit_pollution = QLineEdit()
+        self.edit_pollution.setFixedWidth(80)
+        self.edit_pollution.setValidator(QDoubleValidator())
+        self.edit_pollution.editingFinished.connect(self.onEditCustomEtc)
         grid_info.addWidget(self.edit_name      , 1, 1)
         grid_info.addWidget(self.label_id       , 2, 1)
         grid_info.addWidget(self.edit_goal      , 3, 1)
         grid_info.addWidget(self.edit_factories , 4, 1)
         grid_info.addWidget(self.edit_beacon    , 5, 1)
+        grid_info.addWidget(self.edit_power     , 6, 1)
+        grid_info.addWidget(self.edit_fuel      , 7, 1)
+        grid_info.addWidget(self.edit_pollution , 8, 1)
         
-        grid_info_bt = QGridLayout()
         bt_delete = QPushButton('Delete')
         bt_delete.clicked.connect(self.onClickDelete)
-        grid_info_bt.addWidget(bt_delete        , 0, 0)
-        grid_info.addLayout(grid_info_bt        , 6, 0, 1, 2)
+        grid_info.addWidget(bt_delete           , 9, 1)
         
         grid_info.setRowStretch(7, 1)
         grid_info.setColumnStretch(2, 1)
@@ -114,8 +126,8 @@ class EditWidget(QWidget):
 
     def set_matearial_product(self):
         if self.elem is None:
-            init_grid_item_list(self.grid_mat, [])
-            init_grid_item_list(self.grid_pro, [])
+            self.init_grid_item_list([], False)
+            self.init_grid_item_list([], True)
             return
         
         list_mat = []
@@ -131,30 +143,96 @@ class EditWidget(QWidget):
             elem_sub = [product .name_product, product .num_real]
             list_pro.append(elem_sub)
 
-        init_grid_item_list(self.grid_mat, list_mat)
-        init_grid_item_list(self.grid_pro, list_pro)
+        self.init_grid_item_list(list_mat, False)
+        self.init_grid_item_list(list_pro, True)
         
-    def setEnabled(self, bEnable, bGroup = False):
+    def init_grid_item_list(self, list_item, isResult):
+        if not isResult:    grid = self.grid_mat
+        else:               grid = self.grid_pro
+            
+        # 지우기
+        for i in reversed(range(grid.count())): 
+            grid.itemAt(i).widget().setParent(None)
+                
+        for i in range(len(list_item)):
+            elem = list_item[i]
+            item = item_manager.map_item[elem[0]]
+            iconSize = 32
+            
+            if type(self.elem) != elem_manager.ElemCustom:
+                widget_icon = QLabel()
+                widget_icon.setPixmap(item.getPixmap(iconSize, iconSize))
+                widget_icon.setToolTip(item.getName())
+                
+                widget_num = QLabel(common_func.getAmountPerTime(elem[1]))
+                
+            else:
+                widget_icon = QPushButton()
+                widget_icon.setFixedSize(32, 32)
+                widget_icon.setIconSize(QSize(32, 32))
+                widget_icon.setIcon(item.getIcon())
+                widget_icon.clicked.connect(\
+                    partial(self.onClickChangeCustom, isResult, elem[0])\
+                )
+                
+                widget_num = QLineEdit()
+                widget_num.setFixedWidth(80)
+                widget_num.setValidator(QDoubleValidator())
+                widget_num.setText(common_func.getAmountPerTime(elem[1], bTimeStr=False))
+                widget_num.editingFinished.connect(\
+                    partial(self.onEditNumCustom, isResult, elem[0])\
+                )
+                
+            grid.addWidget(widget_icon, i, 0)
+            grid.addWidget(widget_num, i, 1)
+            
+            if type(self.elem) == elem_manager.ElemCustom:
+                bt_del = QPushButton("-")
+                bt_del.setFixedSize(20, 20)
+                bt_del.clicked.connect(\
+                    partial(self.onClickDelCustom, isResult, elem[0])\
+                )
+                grid.addWidget(bt_del, i, 2)
+        
+        if type(self.elem) == elem_manager.ElemCustom:
+            bt_add = QPushButton("+")
+            bt_add.setFixedSize(20, 20)
+            bt_add.clicked.connect(\
+                partial(self.onClickAddCustom, isResult)\
+            )
+            grid.addWidget(bt_add, len(list_item), 0)
+        
+    def setEnabled(self, bEnable):
         if not bEnable:
             self.edit_name.setEnabled(False)
             self.edit_goal.setEnabled(False)
             self.edit_factories.setEnabled(False)
             self.edit_beacon.setEnabled(False)
-            self.grid_icon.setEnabled(False)
+            self.edit_power.setEnabled(False)
+            self.edit_fuel.setEnabled(False)
+            self.edit_power.setEnabled(False)
+            self.edit_pollution.setEnabled(False)
             self.grid_module.setEnabled(False)
             return
             
         #공용
         self.edit_name.setEnabled(True)
         self.edit_factories.setEnabled(True)
-        self.grid_icon.setEnabled(True, bGroup)
+        self.grid_icon.setEnabled(True)
         
         #각자
-        if bGroup:
-            self.edit_goal.setEnabled(False)
-            self.edit_beacon.setEnabled(False)
-            self.grid_module.setEnabled(False)
-        else:
+        self.edit_goal.setEnabled(False)
+        self.edit_beacon.setEnabled(False)
+        self.grid_module.setEnabled(False)
+        self.edit_power.setEnabled(False)
+        self.edit_fuel.setEnabled(False)
+        self.edit_pollution.setEnabled(False)
+        
+        if type(self.elem) == elem_manager.ElemCustom:
+            self.edit_power.setEnabled(True)
+            self.edit_fuel.setEnabled(True)
+            self.edit_pollution.setEnabled(True)
+        if type(self.elem) == elem_manager.ElemFactory:
             self.edit_goal.setEnabled(True)
             self.edit_beacon.setEnabled(True)
             self.grid_module.setEnabled(True)
@@ -177,23 +255,30 @@ class EditWidget(QWidget):
         #공용
         self.edit_name.setText(elem.name)
         self.label_id.setText(str(elem.id))
-        time = option_widget.time_set[option_widget.time_config]
         self.edit_factories.setText(common_func.getAmountRound(elem.num_factory))
         self.set_matearial_product()
+        self.edit_pollution.setText(common_func.getAmountRound(elem.emission))
         
         self.grid_icon.setInfoGridIcon(elem)
         
-        #그룹 전용
+        self.setEnabled(True)
+        #그룹, 커스텀
         if type(elem) != elem_manager.ElemFactory:
-            self.setEnabled(True, True)
             self.edit_beacon.setText('0')
             self.grid_module.resetInfo()
+            self.edit_power.setText(common_func.getAmountRound(elem.energy))
+            self.edit_fuel.setText(common_func.getAmountRound(elem.energy_fuel))
         #팩토리 전용
         else:
             self.edit_goal.setText(common_func.getAmountPerTime(elem.num_goal, 5, bUnit=False, bTimeStr=False))
-            self.setEnabled(True)
             self.edit_beacon.setText(str(elem.beacon))
             self.grid_module.updateGridModule()
+            if self.elem.factory.energy_source_type == 'electric':
+                self.edit_power.setText(common_func.getAmountRound(elem.energy))
+                self.edit_fuel.setText('0')
+            else:
+                self.edit_power.setText('0')
+                self.edit_fuel.setText(common_func.getAmountRound(elem.energy))
             
         if bUpdateItem:
             # TODO : 링크 있으면 링크 업뎃...
@@ -211,8 +296,7 @@ class EditWidget(QWidget):
     def onGoalChanged(self):
         if self.elem is None:
             return
-        time = option_widget.time_set[option_widget.time_config]
-        goal = float(self.edit_goal.text()) / time
+        goal = option_widget.getNumFromText(self.edit_goal.text())
         self.elem.changeGoal(goal)
         group_tree.tree_widget.updateItem(self.elem)
         self.setElem(self.elem, bUpdateItem=True)
@@ -225,7 +309,7 @@ class EditWidget(QWidget):
         group_tree.tree_widget.updateItem(self.elem)
         self.setElem(self.elem, bUpdateItem=True)
         
-    def onBeaconChagned(self):
+    def onBeaconChanged(self):
         if self.elem is None:
             return
         num_beacon = float(self.edit_beacon.text())
@@ -233,10 +317,43 @@ class EditWidget(QWidget):
         group_tree.tree_widget.updateItem(self.elem)
         self.setElem(self.elem, bUpdateItem=True)
         
+    def onEditCustomEtc(self):
+        if type(self.elem) != elem_manager.ElemCustom: return
+        power = float(self.edit_power.text())
+        fuel = float(self.edit_fuel.text())
+        pollution = float(self.edit_pollution.text())
+        self.elem.changeEtc(power, fuel, pollution)
+        group_tree.tree_widget.updateItem(self.elem)
+        
     def onClickDelete(self):
         self.elem.deleteElem()
-        group_tree.tree_widget.elem_group.updateGroupInOut()
         group_tree.tree_widget.rebuildTree()
+    
+    def onClickAddCustom(self, isResult):
+        self.elem.addSubItem(isResult)
+        self.set_matearial_product()
+        group_tree.tree_widget.updateItem(self.elem)
+    
+    def onClickDelCustom(self, isResult, name):
+        self.elem.delSubItem(isResult, name)
+        self.set_matearial_product()
+        group_tree.tree_widget.updateItem(self.elem)
+        
+    def onClickChangeCustom(self, isResult, name):
+        dlg = common_class.ChangePopup(item_manager.getSortedItemList(), 'item')
+        ret = dlg.exec_()
+        if ret == 1:
+            if name == dlg.selected:
+                return
+            self.elem.changeSubItem(isResult, name, dlg.selected)
+            self.set_matearial_product()
+            group_tree.tree_widget.updateItem(self.elem)
+
+    def onEditNumCustom(self, isResult, name):
+        sender = self.sender()
+        num = common_func.getNumFromText(sender.text())
+        self.elem.changeNum(isResult, name, num)
+        group_tree.tree_widget.updateItem(self.elem)
 
 class GridIcon(QVBoxLayout):
     def __init__(self):
@@ -271,7 +388,7 @@ class GridIcon(QVBoxLayout):
         self.resetInfo()
         self.elem = elem
         
-        if type(elem) == elem_manager.ElemGroup:
+        if type(elem) != elem_manager.ElemFactory:
             if elem.item_goal is not None:
                 self.bt_item.setIcon(elem.item_goal.getIcon())
                 self.bt_item.setToolTip(elem.item_goal.getName())
@@ -279,16 +396,15 @@ class GridIcon(QVBoxLayout):
                 self.bt_item.setIcon(QIcon(common_func.getCommonPixmap('factorio')))
             self.bt_recipe.setIcon(QIcon(common_func.getCommonPixmap('factorio')))
             self.bt_factory.setIcon(QIcon(common_func.getCommonPixmap('factorio')))
-            self.setEnabled(True, True)
-            return
-        self.bt_item.setIcon(elem.item_goal.getIcon())
-        self.bt_item.setToolTip(elem.item_goal.getName())
-        self.bt_recipe.setIcon(elem.recipe.getIcon())
-        self.bt_recipe.setToolTip(common_func.getRecipeToolTipText(elem.recipe))
-        if elem.factory is not None:
-            self.bt_factory.setIcon(elem.factory.getIcon())
-            self.bt_factory.setToolTip(common_func.getFactoryToolTipText(elem.factory))
-            
+        else:
+            self.bt_item.setIcon(elem.item_goal.getIcon())
+            self.bt_item.setToolTip(elem.item_goal.getName())
+            self.bt_recipe.setIcon(elem.recipe.getIcon())
+            self.bt_recipe.setToolTip(common_func.getRecipeToolTipText(elem.recipe))
+            if elem.factory is not None:
+                self.bt_factory.setIcon(elem.factory.getIcon())
+                self.bt_factory.setToolTip(common_func.getFactoryToolTipText(elem.factory))
+                
         self.setEnabled(True)
         
     def resetInfo(self):
@@ -301,7 +417,6 @@ class GridIcon(QVBoxLayout):
         self.bt_factory.setToolTip('')
         self.elem = None
         self.setEnabled(False)
-        
             
     def onClickItem(self):
         global edit_widget
@@ -353,10 +468,11 @@ class GridIcon(QVBoxLayout):
             edit_widget.setElem(self.elem, True)
             group_tree.tree_widget.updateItem(self.elem)
         
-    def setEnabled(self, bEnable, bGroup = False):
+    def setEnabled(self, bEnable):
+        bFactory = type(self.elem) == elem_manager.ElemFactory
         if bEnable:
             self.bt_item.setEnabled(True)
-            if bGroup:
+            if not bFactory:
                 self.bt_recipe.setEnabled(False)
                 self.bt_factory.setEnabled(False)
             else:
@@ -490,23 +606,5 @@ class GridModule(QGridLayout):
             elem.changeModule(list_module)
             edit_widget.setElem(elem)
             group_tree.tree_widget.updateItem(elem)
-            
-def init_grid_item_list(grid, list_item):
-    for i in reversed(range(grid.count())): 
-        grid.itemAt(i).widget().setParent(None)
-            
-    for i in range(len(list_item)):
-        elem = list_item[i]
-        item = item_manager.map_item[elem[0]]
-        iconSize = 32
-        
-        label_icon = QLabel()
-        label_icon.setPixmap(item.getPixmap(iconSize, iconSize))
-        label_icon.setToolTip(item.getName())
-        
-        str_num = common_func.getAmountPerTime(elem[1])
-        
-        grid.addWidget(label_icon, i, 0)
-        grid.addWidget(QLabel(str_num), i, 1)
 
 # --------------------------- debug

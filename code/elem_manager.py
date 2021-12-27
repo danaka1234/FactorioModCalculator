@@ -181,6 +181,8 @@ class Elem:
             elem = ElemFactory.fromMap(map)
         elif map['_type'] == 'group':
             elem = ElemGroup.fromMap(map)
+        elif map['_type'] == 'custom':
+            elem = ElemCustom.fromMap(map)
             
         elem.x = map['x']
         elem.y = map['y']
@@ -215,8 +217,9 @@ class Elem:
     def deleteElem(self):
         if self.group is None:
             return
-        delElemId(self.id)
         self.group.list_child.remove(self)
+        delElemId(self.id)
+        self.group.updateGroupInOut()
         
         # 현재 링크는 없으니 일단 제거
         '''
@@ -713,10 +716,9 @@ class ElemFactory(Elem):
                 node_child.makeGraphByDFS(parent_group, map_search_recipe, self.level, list_factory, list_module, beacon)
     '''
 class ElemGroup(Elem):
-    def __init__(self, id_self, group, id_root):
+    def __init__(self, id_self, group):
         super().__init__(id_self, group)
         self.list_child = []
-        self.id_root       = id_root    #이거는 create에서만 쓰자
         self.energy_fuel = 0
         
     def toMap(self):
@@ -728,7 +730,7 @@ class ElemGroup(Elem):
         
     def fromMap(map):
         id = map['id']
-        e = ElemGroup(id, None, 0)
+        e = ElemGroup(id, None)
         e.energy_fuel = map['energy_fuel']
         return e
     
@@ -780,9 +782,9 @@ class ElemGroup(Elem):
                 self.energy_fuel    = self.energy_fuel + child.energy_fuel
                 
             self.emission   = self.emission + child.emission
-        self.emission   *= self.num_factory
-        self.energy     *= self.num_factory
-        self.energy_fuel*= self.num_factory
+        self.emission       *= self.num_factory
+        self.energy         *= self.num_factory
+        self.energy_fuel    *= self.num_factory
                 
         #원래는 따로 만들고 업데이트 해야함
         self.map_product = {}
@@ -802,6 +804,87 @@ class ElemGroup(Elem):
         if self.group is not None:
             self.group.updateGroupInOut()
             
+        global factories_changed
+        factories_changed = True
+            
+class ElemCustom(Elem):
+    def __init__(self, id_self, group):
+        super().__init__(id_self, group)
+        self.energy_fuel = 0
+        
+    def toMap(self):
+        map = super().toMap()
+        map['_type'] = 'custom'
+        map['energy_fuel'] = self.energy_fuel
+        return map
+        
+    def fromMap(map):
+        id = map['id']
+        e = ElemCustom(id, None)
+        e.energy_fuel = map['energy_fuel']
+        return e
+    
+    def deleteElem(self):
+        super().deleteElem()
+        
+    def changeItem(self, item):
+        self.item_goal = item
+        global factories_changed
+        factories_changed = True
+        
+    def changeEtc(self, power, fuel, pollution):
+        self.energy = power
+        self.energy_fuel = fuel
+        self.emission = pollution
+        
+        self.group.updateGroupInOut()
+        
+    def changeNum(self, isResult, name, num):
+        if isResult:
+            self.map_product[name].num_real = num
+        else:
+            self.map_material[name].num_need = num
+            
+        self.group.updateGroupInOut()
+    
+    def addSubItem(self, isResult):
+        idx = 0
+        list_item = list(item_manager.map_item)
+        name_item = list_item[idx]
+        map = self.map_material
+        if isResult: map = self.map_product
+            
+        while map.get(name_item) is not None:
+            idx += 1
+            name_item = list_item[idx]
+            
+        if isResult:
+            self.map_product[name_item] = ElemProduct(name_item, 0, 1)
+        else:
+            self.map_material[name_item] = ElemMaterial(name_item, 1)
+            
+        self.group.updateGroupInOut()
+    
+    def delSubItem(self, isResult, name):
+        if isResult:
+            del self.map_product[name]
+        else:
+            del self.map_material[name]
+            
+        self.group.updateGroupInOut()
+        
+    def changeSubItem(self, isResult, before, after):
+        if isResult:
+            num = self.map_product[before].num_real
+            del self.map_product[before]
+            self.map_product[after] = ElemProduct(after, 0, num)
+        else:
+            num = self.map_material[before].num_need
+            del self.map_material[before]
+            self.map_material[after] = ElemMaterial(after, num)
+            
+        self.group.updateGroupInOut()
+
 def resourceChanged():
     global map_elem
     for elem in map_elem.values():
@@ -864,7 +947,7 @@ def load_elem():
 def initElemManager():
     global map_elem, factories_changed
     if len(map_elem) == 0:
-        group = ElemGroup(0, None, None)
+        group = ElemGroup(0, None)
         group.changeFacNum(1)
         factories_changed = True
     

@@ -143,6 +143,11 @@ class GroupTreeWidget(QTreeWidget):
         #생성된 아이템 고르기
         edit_widget.edit_widget.setElem(elem)
         self.topLevelItem(0).update()
+
+    def addCustom(self):
+        elem = elem_manager.ElemCustom(None, self.elem_group)
+        ElemTreeItem(self, elem, self.topLevelItem(0))
+        self.topLevelItem(0).update()
         
     def resizeAll(self):
         for idx in range(self.columnCount()):
@@ -219,12 +224,12 @@ class ElemTreeItem(QTreeWidgetItem):
         widget_icon = QLabel()
         if type(elem) == elem_manager.ElemFactory and elem.recipe is not None:
             widget_icon.setPixmap(elem.recipe.getPixmap(iconSize, iconSize))
-        elif type(elem) == elem_manager.ElemGroup and elem.item_goal is not None: 
+        elif type(elem) in [elem_manager.ElemGroup, elem_manager.ElemCustom]\
+            and elem.item_goal is not None: 
             widget_icon.setPixmap(elem.item_goal.getPixmap(iconSize, iconSize))
         else:
             widget_icon.setPixmap(common_func.getCommonPixmap('factorio', iconSize, iconSize))
         
-            
         widget_material = QWidget()
         grid_material = QGridLayout()
         widget_material.setLayout(grid_material)
@@ -242,7 +247,7 @@ class ElemTreeItem(QTreeWidgetItem):
         label1 = QLabel()
         if type(elem) == elem_manager.ElemGroup:
             label1.setPixmap(common_func.getCommonPixmap('factorio', iconSize, iconSize))
-        else:
+        elif type(elem) == elem_manager.ElemFactory:
             if elem.factory is not None:
                 label1.setPixmap(elem.factory.getPixmap(iconSize, iconSize))
             else:
@@ -278,7 +283,7 @@ class ElemTreeItem(QTreeWidgetItem):
         widget_etc.setLayout(grid_etc)
         grid_etc.setColumnStretch(3,1)
         row = 0
-        if type(elem) == elem_manager.ElemGroup:
+        if type(elem) != elem_manager.ElemFactory:
             if elem.energy != 0:
                 label1 = QLabel()
                 label1.setPixmap(common_func.getCommonPixmap('electric', iconSize, iconSize))

@@ -41,6 +41,12 @@ def getAmountRound(amount, num_for_round = 3, bUnit = True):
         str_num = str(int(amount))
     return str_num + str_tail
     
+def getNumFromText(amount):
+    amount = float(amount)
+    time = option_widget.time_set[option_widget.time_config]
+    # 분당 1개면 초당 1/60개다... 나누는게 맞다
+    return amount / time
+    
 def getEnergyRound(amount, num_for_round = 3):
     str_num = getAmountRound(amount, num_for_round)
     return str_num + 'W'
