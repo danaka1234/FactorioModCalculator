@@ -829,12 +829,12 @@ def loadTemplateFromDir(args):
     path_template_json = os.path.join(path_template_dir, name_template_json)
     if not os.path.isdir(path_template_dir):
         if load_widget is not None:
-            msg = 'load fail from \'' + path_template_dir + '\''
+            msg = '\'' + path_template_dir + '\' not exist'
             load_widget.setMsg(msg, True)
         return
     if not os.path.isfile(path_template_json):
         if load_widget is not None:
-            msg = 'load fail from \'' + path_template_dir + '\''
+            msg = '\'' + path_template_json + '\' not exist'
             load_widget.setMsg(msg, True)
         return
         

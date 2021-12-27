@@ -28,7 +28,7 @@ QMutex, QWaitCondition은 함께 쓰는거고, 지금은 쓸일 없는듯
 # 모듈 내부 함수 : 언더바 func_like_this
 # 귀찮아 대충하자
 
-
+is_continue_loading = False
 
 class LoadRapper():
     def __init__(self, msg):
@@ -64,6 +64,8 @@ class LoadingThread(QThread):
         #LoadRapperSub(msg, func)
         
     def run(self):
+        global is_continue_loading, msg_load
+        is_continue_loading = True
         self.bWorking = True
         
         len_mainBar = len(self.list_load)
@@ -83,6 +85,13 @@ class LoadingThread(QThread):
                     r_sub.func(r_sub.args)
                 else:
                     r_sub.func()
+                if not is_continue_loading:
+                    self.bWorking = False
+                    break
+                    
+            if not is_continue_loading:
+                self.bWorking = False
+                break
 
         if self.bWorking:
             self.bWorking = False
@@ -120,8 +129,10 @@ class LoadingWidget(QWidget):
         self.setLayout(vbox)
         
     def setMsg(self, msg, bFail = False):
+        global is_continue_loading
         if bFail:
             msg = 'Loading canceled or fail : '+ msg
+            is_continue_loading = False
         self.mainLabel.setText(msg)
             
     def doLoad(self, bLoadTmpDir, bLoadFac, path_template_dir = None):
