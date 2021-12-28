@@ -273,7 +273,10 @@ class EditWidget(QWidget):
             self.edit_goal.setText(common_func.getAmountPerTime(elem.num_goal, 5, bUnit=False, bTimeStr=False))
             self.edit_beacon.setText(str(elem.beacon))
             self.grid_module.updateGridModule()
-            if self.elem.factory.energy_source_type == 'electric':
+            if self.elem.factory is None:
+                self.edit_power.setText('0')
+                self.edit_fuel.setText('0')
+            elif self.elem.factory.energy_source_type == 'electric':
                 self.edit_power.setText(common_func.getAmountRound(elem.energy))
                 self.edit_fuel.setText('0')
             else:
@@ -296,7 +299,7 @@ class EditWidget(QWidget):
     def onGoalChanged(self):
         if self.elem is None:
             return
-        goal = option_widget.getNumFromText(self.edit_goal.text())
+        goal = common_func.getNumFromText(self.edit_goal.text())
         self.elem.changeGoal(goal)
         group_tree.tree_widget.updateItem(self.elem)
         self.setElem(self.elem, bUpdateItem=True)
@@ -447,7 +450,7 @@ class GridIcon(QVBoxLayout):
             if dlg.selected == self.elem.recipe.name:
                 return
             recipe = item_manager.map_recipe[dlg.selected]
-            edit_widget.elem.changeRecipe(recipe, bItemChange=False)
+            edit_widget.elem.changeRecipe(recipe)
             edit_widget.setElem(edit_widget.elem, True)
         
     def onClickFactory(self):

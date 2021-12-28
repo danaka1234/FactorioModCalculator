@@ -4,6 +4,7 @@ import sys, math, os
 import random   #https://docs.python.org/ko/3/library/random.html
 import queue    #https://docs.python.org/ko/3.8/library/queue.html
                 #http://www.daleseo.com/python-priority-queue
+
 import item_manager, common_func, option_widget
 import json_manager, config_manager, item_manager
 
@@ -332,14 +333,14 @@ class Elem:
     '''
     
 class ElemFactory(Elem):
-    def __init__(self, id_self, group, item_goal=None, num_goal=1, list_factory=[], list_module=[], beacon=0):
+    def __init__(self, id_self, group, item_goal=None):
         super().__init__(id_self, group)
-        self.recipe = None
+        self.recipe     = None
         self.factory    = None
-        self.num_goal = 1
+        self.num_goal   = 1
         self.list_module = []
         self.num_module = 0
-        self.beacon     = beacon
+        self.beacon     = 0
         self.level = 0
         
         self.speed = 0
@@ -349,10 +350,9 @@ class ElemFactory(Elem):
         
         self.bFacNumBase = False
         
-        self.changeItem(item_goal, False)
-        self.changeFactoryFromList(list_factory)
-        self.changeModule(list_module, bFillFirst=True)
-        self.changeGoal(num_goal)
+        # 옵션 있으면 읽어서 설정
+        if item_goal != None:
+            self.changeItem(item_goal)
         
     def toMap(self):
         map = super().toMap()
@@ -392,9 +392,9 @@ class ElemFactory(Elem):
             item_manager.map_factory[map['factory']]\
             if map['factory'] is not None\
             else None
+        e.num_goal = map['num_goal']
         e.list_module = map['list_module']
         e.num_module = map['num_module']
-        e.num_goal = map['num_goal']
         e.beacon = map['beacon']
         e.level = map['level']
         
@@ -410,14 +410,17 @@ class ElemFactory(Elem):
     def changeItem(self, item, bUpdate=True, bResetRecipe=True):
         if item is None:
             if self.recipe is None:
-                tmp = item_manager.getSortedItemList()[0]
-                while type(tmp) != item_manager.Item:
-                    tmp = tmp.list_sub[0]
-                item = tmp
+                item = item_manager.getSortedItemList()[0]
+                while type(item) != item_manager.Item:
+                    item = item.list_sub[0]
             else:
                 name_item = self.recipe.getListProduct()[0][0]
                 item = item_manager.map_item[name_item]
         
+        if self.item_goal == item:
+            return
+            
+        item_before = self.item_goal
         self.item_goal = item
         
         if bResetRecipe:
@@ -425,32 +428,36 @@ class ElemFactory(Elem):
                 for product in self.recipe.getListProduct():
                     # 목표 생산품이 레시피 안에 있는 경우
                     if product[0] == self.item_goal.name:
-                        return
+                        for product2 in self.recipe.getListProduct():
+                            if product2[0] == item_before.name:
+                                break
+                        # 두 생산물의 생산비율이 같은 경우 그냥 리턴
+                        if product[1] == product2[1]:
+                            return
             #change recipe
             name_recipe = self.item_goal.list_madeby[0]
             recipe = item_manager.map_recipe[name_recipe]
-            self.changeRecipe(recipe, bItemChange=False)
+            self.changeRecipe(recipe, bUpdate=False)
             
         if bUpdate:
+            self.resetInOut()
             self.updateElem(module=True)
         
-    def changeRecipe(self, recipe, bItemChange=True, item_goal=None):
+    def changeRecipe(self, recipe, bUpdate=True):
         if self.recipe == recipe:
             return
         self.recipe = recipe
-        
-        if bItemChange:
-            self.changeItem(item_goal, False, False)
             
         #팩토리 변경
         if self.factory is None\
             or recipe.category not in self.factory.crafting_categories:
-            self.changeFactory(None, bUpdateGroup = False)
+            self.changeFactory(None, bUpdate=False)
             
         #TODO : 처리. 링크 제거?
-        self.resetInOut()
         self.list_module = []
-        self.updateElem(module=True)
+        if bUpdate:
+            self.resetInOut()
+            self.updateElem(module=True)
         
     def changeGoal(self, num_goal):
         if self.num_goal == num_goal: return
@@ -472,7 +479,7 @@ class ElemFactory(Elem):
             factory_tmp = item_manager.getFactoryListByRecipe(self.recipe)[-1]
         self.changeFactory(factory_tmp)
         
-    def changeFactory(self, factory, bUpdateGroup = True):
+    def changeFactory(self, factory, bUpdate=True):
         if factory is None:
             list_factory = item_manager.getFactoryListByRecipe(self.recipe)
             if len(list_factory) > 0:
@@ -484,7 +491,9 @@ class ElemFactory(Elem):
         else:
             self.num_module = factory.module_slots
         self.factory = factory
-        self.updateElem()
+        
+        if bUpdate:
+            self.updateElem()
         
     def changeFacNum(self, num_factory):
         if self.num_factory == num_factory: return
@@ -565,9 +574,6 @@ class ElemFactory(Elem):
             
         bUpdate = self.updateGoalOrFac()
         
-        if not bUpdate:
-            return
-            
         self.updateInOut()
             
         if self.factory is not None:
@@ -579,8 +585,7 @@ class ElemFactory(Elem):
             self.emission = 0
             self.energy = 0
             
-        if self.group is not None:
-            self.group.updateGroupInOut()
+        self.group.updateGroupInOut()
             
         global factories_changed
         factories_changed = True
@@ -601,7 +606,7 @@ class ElemFactory(Elem):
             product = self.map_product[key]
             num_product = self.recipe.getProductNumByName(key)
             product.num_real = num_product * ratio
-
+        
         #material 초기화 및 트리의 자식노드 초기화
         #(초당)소비량 = 생산회수 * 레시피 소비 / 보너스
         bonus = 1 + self.productivity
@@ -617,7 +622,7 @@ class ElemFactory(Elem):
                 elem_producer = map_elem[link.producer.id]
                 link.num_goal = num_need
                 elem_producer.addGoal(key, num_need)
-    
+        
     def updateModule(self):
         #backup
         speed = self.speed 
@@ -685,36 +690,6 @@ class ElemFactory(Elem):
             self.recipe = None
             self.map_product[name_product] = ElemProduct(name_product, num_goal)
 
-    '''
-    def makeGraphByDFS(self, parent_group, map_search_recipe, level, list_factory, list_module, beacon):
-        # 겹치지 않기 위한 map 
-        map_search_recipe[self.recipe.name] = self
-        recipe = item_manager.map_recipe.get(self.recipe.name)
-
-        if recipe is None:
-            return
-        
-        for material in recipe.getListMaterial():
-            name_material = material[0]
-            item_material = item_manager.map_item[name_material]
-            name_recipe = None
-            if len(item_material.list_madeby) != 0:
-                name_recipe = item_material.list_madeby[0]
-
-            node_child = None
-                
-            # 이미 들어있지 않을 때만 넣기
-            # 루프는 어쩌지
-            if map_search_recipe.get(name_recipe) is not None:
-                node_child = map_search_recipe[name_recipe]
-                if self.id != node_child.id:   # 무한루프 가능성
-                    node_child.connectProduct(self, name_material)
-                    #self.updateDownLevel() # 이미 들어있는 경우 레벨 꼬임을 대비한 새로고침
-            else:
-                node_child = ElemFactory(None, parent_group, item_material, 0, list_factory, list_module, beacon)
-                node_child.connectProduct(self, name_material)
-                node_child.makeGraphByDFS(parent_group, map_search_recipe, self.level, list_factory, list_module, beacon)
-    '''
 class ElemGroup(Elem):
     def __init__(self, id_self, group):
         super().__init__(id_self, group)
@@ -738,8 +713,7 @@ class ElemGroup(Elem):
         super().deleteElem()
         
         for child in self.list_child:
-            child.delElem()
-        #TODO : 처리. 링크 제거?
+            child.deleteElem()
     
     def changeItem(self, item):
         self.item_goal = item
@@ -850,6 +824,7 @@ class ElemCustom(Elem):
     def addSubItem(self, isResult):
         idx = 0
         list_item = list(item_manager.map_item)
+        #TODO : sortItemList 관련 정리
         name_item = list_item[idx]
         map = self.map_material
         if isResult: map = self.map_product

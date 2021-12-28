@@ -91,7 +91,7 @@ class GroupTreeWidget(QTreeWidget):
         
     def rebuildTree(self, keep_sel = False):
         if keep_sel:
-            elem = edit_widget.edit_widget.elem
+            elem_before = edit_widget.edit_widget.elem
         self.clear()
         item_group = ElemTreeItem(self, self.elem_group, None)
         
@@ -106,7 +106,7 @@ class GroupTreeWidget(QTreeWidget):
         self.resizeAll()
         
         if keep_sel:
-            edit_widget.edit_widget.setElem(elem)
+            edit_widget.edit_widget.setElem(elem_before)
         
     def updateItem(self, elem, bUpdateGroup = True):
         item_group = self.topLevelItem(0)
@@ -129,7 +129,7 @@ class GroupTreeWidget(QTreeWidget):
         return item_tree
         
     def addGroup(self):
-        elem = elem_manager.ElemGroup(None, self.elem_group, None)
+        elem = elem_manager.ElemGroup(None, self.elem_group)
         ElemTreeItem(self, elem, self.topLevelItem(0))
         
         #생성된 아이템 고르기
@@ -137,11 +137,15 @@ class GroupTreeWidget(QTreeWidget):
         self.topLevelItem(0).update()
 
     def addFactory(self):
-        elem = elem_manager.ElemFactory(None, self.elem_group)
+        item = item_manager.getSortedItemList()[0]
+        while type(item) != item_manager.Item:
+            item = item.list_sub[0]
+        elem = elem_manager.ElemFactory(None, self.elem_group, item)
         ElemTreeItem(self, elem, self.topLevelItem(0))
         
         #생성된 아이템 고르기
         edit_widget.edit_widget.setElem(elem)
+        self.updateItem(elem)
         self.topLevelItem(0).update()
 
     def addCustom(self):
@@ -299,7 +303,7 @@ class ElemTreeItem(QTreeWidgetItem):
                 grid_etc.addWidget(label2, row, 1)
                 row = row + 1
         else:
-            if elem.energy != 0:
+            if elem.factory is not None and elem.energy != 0:
                 label1 = QLabel()
                 name = 'electric'
                 if elem.factory.energy_source_type != 'electric':
