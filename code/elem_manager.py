@@ -411,8 +411,6 @@ class ElemFactory(Elem):
         if item is None:
             if self.recipe is None:
                 item = item_manager.getSortedItemList()[0]
-                while type(item) != item_manager.Item:
-                    item = item.list_sub[0]
             else:
                 name_item = self.recipe.getListProduct()[0][0]
                 item = item_manager.map_item[name_item]
@@ -823,15 +821,14 @@ class ElemCustom(Elem):
     
     def addSubItem(self, isResult):
         idx = 0
-        list_item = list(item_manager.map_item)
-        #TODO : sortItemList 관련 정리
-        name_item = list_item[idx]
+        list_item = item_manager.getSortedItemList()
+        name_item = list_item[idx].name
         map = self.map_material
         if isResult: map = self.map_product
             
         while map.get(name_item) is not None:
             idx += 1
-            name_item = list_item[idx]
+            name_item = list_item[idx].name
             
         if isResult:
             self.map_product[name_item] = ElemProduct(name_item, 0, 1)

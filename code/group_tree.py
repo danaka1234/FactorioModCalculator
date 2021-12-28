@@ -138,8 +138,6 @@ class GroupTreeWidget(QTreeWidget):
 
     def addFactory(self):
         item = item_manager.getSortedItemList()[0]
-        while type(item) != item_manager.Item:
-            item = item.list_sub[0]
         elem = elem_manager.ElemFactory(None, self.elem_group, item)
         ElemTreeItem(self, elem, self.topLevelItem(0))
         

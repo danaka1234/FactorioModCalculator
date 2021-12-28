@@ -19,6 +19,7 @@ map_module = dict()
 map_locale_1st = dict()
 map_locale_2nd = dict()
 
+list_item_sorted = []
 list_recipe_popup = []
 
 # save 관련 변수 ------------------------------
@@ -670,6 +671,11 @@ class ItemRapper:
             
 def sortItemList():
     global list_recipe_popup, map_item, map_recipe, map_group, map_subgroup
+    global list_item_sorted
+    
+    # 아이템 정렬
+    list_item_sorted = list(map_item.values())
+    list_item_sorted.sort(key=lambda elem: elem.order)
     
     # 아이템 초기화 & 정렬
     for group in map_group.values():
@@ -703,6 +709,11 @@ def sortItemList():
     list_recipe_popup.sort(key=lambda elem: elem.item.order)    #그룹 정렬
     
 def getSortedItemList():
+    global list_item_sorted
+    return list_item_sorted
+    
+def getPopupRecipeList():
+    global list_recipe_popup
     return list_recipe_popup
 
 # save 관련 코드 ------------------------------
