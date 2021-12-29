@@ -129,7 +129,8 @@ class Elem:
         self.num_factory = 1    # 공장 개수 = 모듈 비율, 시간 적용한 것
         self.order = ''
         
-        self.energy = 0
+        self.energy_elect = 0
+        self.energy_fuel = 0
         self.emission = 0
         
         self.map_product  = dict()  # ElemProduct
@@ -163,7 +164,8 @@ class Elem:
                 else None,  \
             'num_factory' : self.num_factory,
             'order' : self.order,
-            'energy' : self.energy,
+            'energy_elect' : self.energy_elect,
+            'energy_fuel' : self.energy_fuel,
             'emission' : self.emission,
             'map_product' : map_p,
             'map_material' : map_m,
@@ -194,7 +196,8 @@ class Elem:
             else None
         elem.num_factory = map['num_factory']
         elem.order = map['order']
-        elem.energy = map['energy']
+        elem.energy_elect = map['energy_elect']
+        elem.energy_fuel = map['energy_fuel']
         elem.emission = map['emission']
         map_p = dict()
         map_m = dict()
@@ -574,15 +577,19 @@ class ElemFactory(Elem):
         
         self.updateInOut()
             
+        self.energy_elect = 0
+        self.energy_fuel = 0
+        self.emission = 0
         if self.factory is not None:
             self.emission = self.factory.energy_source_emissions * self.num_factory * (1 + self.pollution)
-            self.energy = \
+            energy = \
                 self.num_factory * self.factory.energy_usage * (1 + self.consumption) \
                 + math.ceil(self.num_factory) * self.factory.drain
-        else:
-            self.emission = 0
-            self.energy = 0
-            
+            if self.factory.energy_source_type == 'electric':
+                self.energy_elect = energy
+            else:
+                self.energy_fuel = energy
+                
         self.group.updateGroupInOut()
             
         global factories_changed
@@ -692,7 +699,6 @@ class ElemGroup(Elem):
     def __init__(self, id_self, group):
         super().__init__(id_self, group)
         self.list_child = []
-        self.energy_fuel = 0
         
     def toMap(self):
         map = super().toMap()
@@ -704,7 +710,6 @@ class ElemGroup(Elem):
     def fromMap(map):
         id = map['id']
         e = ElemGroup(id, None)
-        e.energy_fuel = map['energy_fuel']
         return e
     
     def deleteElem(self):
@@ -726,8 +731,8 @@ class ElemGroup(Elem):
     def updateGroupInOut(self):
         map_all = {}
         
-        self.energy = 0
         self.emission = 0
+        self.energy_elect = 0
         self.energy_fuel = 0
         
         for child in self.list_child:
@@ -746,16 +751,16 @@ class ElemGroup(Elem):
             if type(child) == ElemFactory:
                 if child.factory is not None:
                     if child.factory.energy_source_type == 'electric':
-                        self.energy         = self.energy + child.energy
+                        self.energy_elect   += child.energy_elect
                     else:
-                        self.energy_fuel    = self.energy_fuel + child.energy
+                        self.energy_fuel    += child.energy_fuel
             else:
-                self.energy         = self.energy + child.energy
-                self.energy_fuel    = self.energy_fuel + child.energy_fuel
+                self.energy_elect   += child.energy_elect
+                self.energy_fuel    += child.energy_fuel
                 
             self.emission   = self.emission + child.emission
         self.emission       *= self.num_factory
-        self.energy         *= self.num_factory
+        self.energy_elect   *= self.num_factory
         self.energy_fuel    *= self.num_factory
                 
         #원래는 따로 만들고 업데이트 해야함
@@ -782,12 +787,10 @@ class ElemGroup(Elem):
 class ElemCustom(Elem):
     def __init__(self, id_self, group):
         super().__init__(id_self, group)
-        self.energy_fuel = 0
         
     def toMap(self):
         map = super().toMap()
         map['_type'] = 'custom'
-        map['energy_fuel'] = self.energy_fuel
         return map
         
     def fromMap(map):
@@ -805,7 +808,7 @@ class ElemCustom(Elem):
         factories_changed = True
         
     def changeEtc(self, power, fuel, pollution):
-        self.energy = power
+        self.energy_elect = power
         self.energy_fuel = fuel
         self.emission = pollution
         

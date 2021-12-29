@@ -266,7 +266,7 @@ class EditWidget(QWidget):
         if type(elem) != elem_manager.ElemFactory:
             self.edit_beacon.setText('0')
             self.grid_module.resetInfo()
-            self.edit_power.setText(common_func.getAmountRound(elem.energy))
+            self.edit_power.setText(common_func.getAmountRound(elem.energy_elect))
             self.edit_fuel.setText(common_func.getAmountRound(elem.energy_fuel))
         #팩토리 전용
         else:
@@ -277,11 +277,11 @@ class EditWidget(QWidget):
                 self.edit_power.setText('0')
                 self.edit_fuel.setText('0')
             elif self.elem.factory.energy_source_type == 'electric':
-                self.edit_power.setText(common_func.getAmountRound(elem.energy))
+                self.edit_power.setText(common_func.getAmountRound(elem.energy_elect))
                 self.edit_fuel.setText('0')
             else:
                 self.edit_power.setText('0')
-                self.edit_fuel.setText(common_func.getAmountRound(elem.energy))
+                self.edit_fuel.setText(common_func.getAmountRound(elem.energy_elect))
             
         if bUpdateItem:
             # TODO : 링크 있으면 링크 업뎃...

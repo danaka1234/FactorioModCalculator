@@ -286,10 +286,10 @@ class ElemTreeItem(QTreeWidgetItem):
         grid_etc.setColumnStretch(3,1)
         row = 0
         if type(elem) != elem_manager.ElemFactory:
-            if elem.energy != 0:
+            if elem.energy_elect != 0:
                 label1 = QLabel()
                 label1.setPixmap(common_func.getCommonPixmap('electric', iconSize, iconSize))
-                label2 = QLabel(common_func.getEnergyRound(elem.energy))
+                label2 = QLabel(common_func.getEnergyRound(elem.energy_elect))
                 grid_etc.addWidget(label1, row, 0)
                 grid_etc.addWidget(label2, row, 1)
                 row = row + 1
@@ -301,13 +301,16 @@ class ElemTreeItem(QTreeWidgetItem):
                 grid_etc.addWidget(label2, row, 1)
                 row = row + 1
         else:
-            if elem.factory is not None and elem.energy != 0:
+            if elem.factory is not None and \
+                (elem.energy_elect != 0 or elem.energy_fuel != 0):
                 label1 = QLabel()
                 name = 'electric'
+                energy = elem.energy_elect
                 if elem.factory.energy_source_type != 'electric':
                     name = 'fuel'
+                    energy = elem.energy_fuel
                 label1.setPixmap(common_func.getCommonPixmap(name, iconSize, iconSize))
-                label2 = QLabel(common_func.getEnergyRound(elem.energy))
+                label2 = QLabel(common_func.getEnergyRound(energy))
                 grid_etc.addWidget(label1, row, 0)
                 grid_etc.addWidget(label2, row, 1)
                 row = row + 1
