@@ -87,6 +87,9 @@ class FCITEM:
                 item = map_item[name_item]
                 path = item.path_icon
         
+        if path == '' or path is None:
+            return ''
+            
         # 경로가 슬래시로 시작하면 os.path.join에서 절대경로로 인식함...
         while path[0] == '\\':
             path = path[1:]
@@ -171,7 +174,7 @@ class Item(FCITEM):
         self.path_icon = elem['icon']
         if self.path_icon is None:
             if type(elem) != dict and elem['icons'] is not None:
-                self.path_icon = elem['icons']['icon']
+                self.path_icon = elem['icons'][1]['icon']
             else:
                 self.path_icon = ''
         
@@ -271,13 +274,6 @@ class Recipe(FCITEM):
                 self.category = 'basic-solid'
         self.subgroup = elem['subgroup']        #subgroup
         
-        '''
-        #hidden 레시피 제외
-        if type(elem) != dict:
-            if elem['hidden'] == True:
-                return
-        '''
-                
         if type(elem) == dict:
             self.time = elem['time']
             self.list_input = elem['list_input']
@@ -421,12 +417,6 @@ class Factory(FCITEM):
         
         item = map_item[self.name]
         self.order = item.order
-        
-        '''
-        #hidden 저장 안함
-        if self.flags is not None and 'hidden' in self.flags:
-            return
-        '''
         
         if self.type == 'mining-drill':
             self.crafting_speed = map.get('mining_speed')
@@ -637,20 +627,6 @@ def copyIcon():
         module = map_module[key]
         if module.path_icon == '' or module.path_icon is None : continue
         module.path_icon = loadIcon(module.path_icon)
-
-def searchItemNoRecipe():
-    global map_item
-    for item in map_item.values():
-        if len(item.list_madeby) == 0:
-            if 'hidden' not in item.flags:
-                log_manager.write_log("Item has no recipe : " + item.name)
-                
-                map = {
-                    'name' : item.name, 'icon' : '', 'category' : '_Unknown', 'subgroup' : '_Unknown', \
-                    'time' : 1, 'list_input' : [], 'list_output' : [[item.name, 1]], \
-                    'order' : 'zzz', 'expensive' : None
-                }
-                Recipe(map)
                 
 def sortRecipe():
     global map_item, map_recipe
@@ -689,10 +665,6 @@ def sortItemList():
             
             for name_item in subgroup.list_item:
                 item = map_item[name_item]
-                
-                # hidden 제외
-                if 'hidden' in item.flags:
-                    continue
                 
                 bAddGroup = True
                 bAddSubgroup = True

@@ -379,7 +379,6 @@ def main() :
     make_fluid()
     make_locale(path_factorio)
     
-    item_manager.searchItemNoRecipe()
     item_manager.sortRecipe()
     item_manager.copyIcon()
     

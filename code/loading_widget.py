@@ -201,10 +201,6 @@ class LoadingWidget(QWidget):
             self.thread.list_load.append(main)
             
             main.list_sub.append(\
-                LoadRapperSub('Search Item Having No Recipe', \
-                    item_manager.searchItemNoRecipe))
-            
-            main.list_sub.append(\
                 LoadRapperSub('Sort Recipe', \
                     item_manager.sortRecipe))
             
