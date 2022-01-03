@@ -186,6 +186,8 @@ class Elem:
             elem = ElemGroup.fromMap(map)
         elif map['_type'] == 'custom':
             elem = ElemCustom.fromMap(map)
+        elif map['_type'] == 'special':
+            elem = ElemSpecial.fromMap(map)
             
         elem.x = map['x']
         elem.y = map['y']
@@ -336,7 +338,7 @@ class Elem:
     '''
     
 class ElemFactory(Elem):
-    def __init__(self, id_self, group, item_goal=None):
+    def __init__(self, id_self, group, item_goal):
         super().__init__(id_self, group)
         self.recipe     = None
         self.factory    = None
@@ -385,7 +387,7 @@ class ElemFactory(Elem):
     
     def fromMap(map):
         id = map['id']
-        e = ElemFactory(id, None)
+        e = ElemFactory(id, None, None)
         
         e.recipe = \
             item_manager.map_recipe[map['recipe']]\
@@ -596,7 +598,7 @@ class ElemFactory(Elem):
         factories_changed = True
         
     def updateInOut(self):
-        global map_elem
+        #global map_elem
         num_recipe = 1
         for output in self.recipe.getListProduct():
             if output[0] == self.item_goal.name:
@@ -620,13 +622,6 @@ class ElemFactory(Elem):
             num_material = self.recipe.getMaterialNumByName(key)
             material.num_need = num_material * ratio / bonus
             
-            #각 링크에 필요한 양 할당 - TODO : 우선 등비로
-            count_child = len(material.list_link)
-            for link in material.list_link:
-                num_need = material.num_need / count_child
-                elem_producer = map_elem[link.producer.id]
-                link.num_goal = num_need
-                elem_producer.addGoal(key, num_need)
         
     def updateModule(self):
         #backup
@@ -713,6 +708,9 @@ class ElemGroup(Elem):
         return e
     
     def deleteElem(self):
+        if self.group is None:
+            return
+            
         super().deleteElem()
         
         for child in self.list_child:
@@ -859,7 +857,148 @@ class ElemCustom(Elem):
             self.map_material[after] = ElemMaterial(after, num)
             
         self.group.updateGroupInOut()
-
+        
+class ElemSpecial(ElemFactory):
+    def __init__(self, id_self, group, item_factory):
+        super().__init__(id_self, group, None)
+        
+        # 처음 로딩
+        if item_factory is not None:
+            self.factory = item_factory
+            name_recipe = item_factory.fixed_recipe
+            self.recipe = item_manager.map_recipe[name_recipe]
+            name_result = item_factory.list_result[0][1]
+            self.changeItem(item_manager.map_item[name_result])
+            
+    def toMap(self):
+        map = super().toMap()
+        map['_type'] = 'special'
+        
+        return map
+        
+    def fromMap(map):
+        id = map['id']
+        e = ElemSpecial(id, None, None)
+        
+        e.recipe = \
+            item_manager.map_recipe[map['recipe']]\
+            if map['recipe'] is not None\
+            else None
+        e.factory = \
+            item_manager.map_factory[map['factory']]\
+            if map['factory'] is not None\
+            else None
+        e.num_goal = map['num_goal']
+        e.list_module = map['list_module']
+        e.num_module = map['num_module']
+        e.beacon = map['beacon']
+        e.level = map['level']
+        
+        e.speed = map['speed']
+        e.productivity = map['productivity']
+        e.consumption = map['consumption']
+        e.pollution = map['pollution']
+        
+        e.bFacNumBase = map['bFacNumBase']
+        
+        return e
+    
+    def changeItem(self, item, bUpdate=True):
+        if self.item_goal == item:
+            return
+            
+        self.item_goal = item
+        
+        if bUpdate:
+            self.resetInOut()
+            self.updateElem(module=True)
+            
+    def updateGoalOrFac(self):
+        if self.factory is None:
+            return
+        
+        # backup
+        num_factory = self.num_factory
+        num_goal = self.num_goal
+        
+        # result
+        result = []
+        for elem in self.factory.list_result:
+            if elem[1] == self.item_goal.name:
+                result = elem
+                
+        # 생산 = 레시피 당 생산 * 모듈 보너스
+        num_recipe = result[2]  # 레시피 1회당 생산
+        for output in self.recipe.getListProduct():
+            if output[0] == self.item_goal.name:
+                num_recipe = output[1]
+                break
+                
+        production = num_recipe * ( 1 + self.productivity )
+                
+        
+        # 1개당 속도 = 공장 속도 * 모듈 속도 * 비콘
+        speed_per_1 = self.factory.crafting_speed * \
+                (1 + self.speed) * (1 + self.beacon / 100)
+                
+        # 개당 생산 시간 = 레시피 시간 / 속도
+        time_recipe = self.recipe.getTime()
+        time_per_1 = time_recipe / speed_per_1
+                
+        # 총 시간 = 100개 / 1개 속도 + 발사시간
+        time = time_per_1 * self.factory.rocket_parts_required\
+            + self.factory.fixed_time
+        
+        if self.bFacNumBase:
+            # 결과 = 공장수 * 생산 / 시간
+            self.num_goal = self.num_factory * production / time
+        else:
+            # 공장수 = 결과 * 시간 / 생산량
+            self.num_factory = self.num_goal * time / production
+            
+        return num_factory != self.num_factory or num_goal != self.num_goal
+        
+    def resetInOut(self):
+        self.map_product  = {}
+        self.map_material = {}
+        
+        result = []
+        for elem in self.factory.list_result:
+            if elem[1] == self.item_goal.name:
+                result = elem
+        self.map_product[result[1]] = ElemProduct(result[1])
+        self.map_material[result[0]] = ElemMaterial(result[0])
+            
+        for input in self.recipe.getListMaterial():
+            self.map_material[input[0]] = ElemMaterial(input[0])
+            
+    def updateInOut(self):
+        # result
+        result = []
+        for elem in self.factory.list_result:
+            if elem[1] == self.item_goal.name:
+                result = elem
+        num_recipe = elem[2]
+        
+        #(초당)생산회수 = 목표 / 레시피 생산
+        ratio = self.num_goal / num_recipe
+        
+        #product 초기화
+        list(self.map_product.values())[0].num_real = self.num_goal
+        
+        #material 초기화 및 트리의 자식노드 초기화
+        #(초당)소비량 = 생산회수 * 레시피 소비 / 보너스
+        bonus = 1 + self.productivity
+        for key in self.map_material.keys():
+            material = self.map_material[key]
+            if key == result[0]:
+                num_part = 1
+                num_material = 1
+            else:
+                num_part = self.factory.rocket_parts_required
+                num_material = self.recipe.getMaterialNumByName(key)
+            material.num_need = num_material * ratio / bonus * num_part
+            
 def resourceChanged():
     global map_elem
     for elem in map_elem.values():

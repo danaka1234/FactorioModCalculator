@@ -35,6 +35,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.initUI()
         self.loadTemplate()
+        #TODO : Icon Load
         list = item_manager.getSortedItemList()
         
     def initUI(self):
@@ -132,17 +133,19 @@ class ModifyWidget(QWidget):
         
         self.bt_addGroup = QPushButton('Add Group')
         self.bt_addFactory = QPushButton('Add Factory')
+        self.bt_addSpecial = QPushButton('Add\nRocket Silo')
         self.bt_addCustom = QPushButton('Add Custom')
         grid.addWidget(self.bt_addGroup,    0, 4)
         grid.addWidget(self.bt_addFactory,  0, 5)
-        grid.addWidget(self.bt_addCustom,   0, 6)
-        grid.setColumnStretch(7,1)
+        grid.addWidget(self.bt_addSpecial,   0, 6)
+        grid.addWidget(self.bt_addCustom,   0, 7)
+        grid.setColumnStretch(8,1)
         self.bt_edit = QPushButton('Hide\nEdit')
         self.bt_edit.setMaximumWidth(50)
-        grid.addWidget(self.bt_edit,        0, 8)
+        grid.addWidget(self.bt_edit,        0, 9)
         self.bt_option = QPushButton('Hide\nOption')
         self.bt_option.setMaximumWidth(50)
-        grid.addWidget(self.bt_option,      0, 9)
+        grid.addWidget(self.bt_option,      0, 10)
         
         self.label_group = QLabel('None(0)')
         grid.addWidget(QLabel('Current Group')  , 0, 0)
@@ -156,6 +159,7 @@ class ModifyWidget(QWidget):
         
         self.bt_addGroup.clicked.connect(group_tree.tree_widget.addGroup)
         self.bt_addFactory.clicked.connect(group_tree.tree_widget.addFactory)
+        self.bt_addSpecial.clicked.connect(group_tree.tree_widget.addSpecial)
         self.bt_addCustom.clicked.connect(group_tree.tree_widget.addCustom)
         self.bt_edit.clicked.connect(self.toggleEditWidget)
         self.bt_option.clicked.connect(self.toggleOptionWidget)

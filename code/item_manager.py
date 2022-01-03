@@ -14,6 +14,7 @@ map_recipe = dict()
 map_group = dict()
 map_subgroup = dict()
 map_factory = dict()
+map_special_factory = dict()
 map_module = dict()
 
 map_locale_1st = dict()
@@ -21,6 +22,8 @@ map_locale_2nd = dict()
 
 list_item_sorted = []
 list_recipe_popup = []
+
+map_special_sub = dict()
 
 # save 관련 변수 ------------------------------
 path_tempdir = ''
@@ -118,7 +121,6 @@ class ItemGroup(FCITEM):
         return map
         
     def fromMap(map):
-        global map_group
         inst = ItemGroup(map)
         inst.list_subgroup = map['list_subgroup']
         
@@ -147,7 +149,6 @@ class ItemSubGroup(FCITEM):
         return map
         
     def fromMap(map):
-        global map_subgroup
         inst = ItemSubGroup(map)
         inst.list_item = map['list_item']
         
@@ -192,6 +193,18 @@ class Item(FCITEM):
         if inst_subgroup is not None:
             if not self.name in inst_subgroup.list_item:
                 inst_subgroup.list_item.append(self.name)
+                
+        # 처음 로딩 시 처리
+        if type(elem) != dict:
+            # 로켓 사일로 관련
+            global map_special_sub
+            if elem['rocket_launch_product'] is not None:
+                if map_special_sub.get('rocket_launch_product') is None:
+                        map_special_sub['rocket_launch_product'] = []
+                tmp = elem['rocket_launch_product']
+                map_special_sub['rocket_launch_product'].append(\
+                    [self.name, tmp[1], tmp[2]]\
+                )
         
     def toMap(self):
         map = {}
@@ -206,7 +219,6 @@ class Item(FCITEM):
         return map
         
     def fromMap(map):
-        global map_item
         inst = Item(map)
 
 def make_recipe_time_in_out(table):
@@ -358,7 +370,6 @@ class Recipe(FCITEM):
         return map
         
     def fromMap(map):
-        global map_recipe
         inst = Recipe(map)
     
     def getListProduct(self):
@@ -413,12 +424,16 @@ class Factory(FCITEM):
         self.next_upgrade = map.get('next_upgrade')
         self.module_slots = None
         self.energy_source_type = None
-        self.energy_source_emissions = None
+        self.energy_source_emissions = 0
         
+        if self.name is None:
+            #print('Factory', self.name)
+            import traceback
+            #traceback.print_stack()
         item = map_item[self.name]
         self.order = item.order
         
-        if self.type == 'mining-drill':
+        if self.type == 'mining-drill': # 리소스 채취
             self.crafting_speed = map.get('mining_speed')
         
         if map.get('flags'):
@@ -440,7 +455,8 @@ class Factory(FCITEM):
         if map.get('energy_source'):
             table = dict(map['energy_source'])
             self.energy_source_type = table.get('type')
-            self.energy_source_emissions = table.get('emissions_per_minute')
+            if table.get('emissions_per_minute'):
+                self.energy_source_emissions = table.get('emissions_per_minute')
             
         if self.name is not None:
             map_factory[self.name] = self
@@ -483,8 +499,41 @@ class Factory(FCITEM):
         return map
         
     def fromMap(map):
-        global map_factory
         inst = Factory(map)
+        
+class SpecialFactory(Factory):
+    def __init__(self, map):
+        global map_special_factory, map_special_sub, map_item
+        super().__init__(map)
+        map = dict(map)
+        
+        self.fixed_recipe = map['fixed_recipe']
+        self.rocket_parts_required = map['rocket_parts_required']
+        self.fixed_time = map.get('fixed_time')
+        if self.fixed_time is None:
+            self.fixed_time = 40.33 # 일단 상수
+            #https://wiki.factorio.com/Rocket_silo
+        
+        self.list_result = map.get('list_result')
+        
+        # 처음 로딩일 경우 map_special_sub가 비어있지 않다
+        # 일단 하드코딩
+        if map_special_sub.get('rocket_launch_product') is not None:
+            self.list_result = map_special_sub['rocket_launch_product']
+            
+        map_special_factory[self.name] = self
+        
+    def toMap(self):
+        map = super().toMap()
+        map['fixed_recipe'] = self.fixed_recipe
+        map['rocket_parts_required'] = self.rocket_parts_required
+        map['fixed_time'] = self.fixed_time
+        map['list_result'] = self.list_result
+        
+        return map
+        
+    def fromMap(map):
+        inst = SpecialFactory(map)
         
 def get_map_from_table(table):
     map_result = dict()
@@ -530,7 +579,6 @@ class Module(FCITEM):
         return map
         
     def fromMap(map):
-        global map_module
         inst = Module(map)
 
 def getGroupList():
@@ -771,6 +819,7 @@ def copyDefaultIcon():
 def saveTemplateFile():
     global name_template_json, version_current
     global map_item, map_recipe, map_group, map_subgroup, map_factory, map_module
+    global map_special_factory
     
     map = {}
     
@@ -783,6 +832,7 @@ def saveTemplateFile():
     ['group'    , map_group    ],\
     ['subgroup' , map_subgroup ],\
     ['factory'  , map_factory  ],\
+    ['specialFactory'  , map_special_factory  ],\
     ['module'   , map_module   ],\
     ]
     for elem in list_map:
@@ -837,7 +887,7 @@ def loadTemplateFromDir(args):
     ['subgroup', ItemSubGroup],\
     ['item',     Item],\
     ['recipe',   Recipe],\
-    ['factory',  Factory],\
+    ['specialFactory'  , SpecialFactory  ],\
     ['module',   Module],\
     ]
     
@@ -863,10 +913,6 @@ def loadTemplateFromDir(args):
         
     setTemplateDir(path_template_dir)
     return True
-    
-def loadFactories(load_type, path):
-    return False
-
 
 # -------------------------- debug
 def main() :

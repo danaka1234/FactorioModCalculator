@@ -108,6 +108,11 @@ def make_factory():
     for key in raw['mining-drill']:
         item_manager.Factory( raw['mining-drill'][key] )
         
+    # make special factory
+    # 일단 rocket-silo 만...
+    for key in raw['rocket-silo']:
+        item_manager.SpecialFactory( raw['rocket-silo'][key] )
+        
 def make_module():
     global lua
     raw = lua.globals().data.raw

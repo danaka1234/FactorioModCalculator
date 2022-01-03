@@ -133,7 +133,7 @@ class GroupTreeWidget(QTreeWidget):
         ElemTreeItem(self, elem, self.topLevelItem(0))
         
         #생성된 아이템 고르기
-        edit_widget.edit_widget.setElem(elem)
+        self.setCurrentSelect(elem)
         self.topLevelItem(0).update()
 
     def addFactory(self):
@@ -142,13 +142,20 @@ class GroupTreeWidget(QTreeWidget):
         ElemTreeItem(self, elem, self.topLevelItem(0))
         
         #생성된 아이템 고르기
-        edit_widget.edit_widget.setElem(elem)
-        self.updateItem(elem)
+        self.setCurrentSelect(elem)
+        self.topLevelItem(0).update()
+        
+    def addSpecial(self):
+        item = list(item_manager.map_special_factory.values())[0]
+        elem = elem_manager.ElemSpecial(None, self.elem_group, item)
+        ElemTreeItem(self, elem, self.topLevelItem(0))
+        self.setCurrentSelect(elem)
         self.topLevelItem(0).update()
 
     def addCustom(self):
         elem = elem_manager.ElemCustom(None, self.elem_group)
         ElemTreeItem(self, elem, self.topLevelItem(0))
+        self.setCurrentSelect(elem)
         self.topLevelItem(0).update()
         
     def resizeAll(self):

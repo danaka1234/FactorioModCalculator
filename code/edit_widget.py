@@ -232,7 +232,8 @@ class EditWidget(QWidget):
             self.edit_power.setEnabled(True)
             self.edit_fuel.setEnabled(True)
             self.edit_pollution.setEnabled(True)
-        if type(self.elem) == elem_manager.ElemFactory:
+        if type(self.elem) == elem_manager.ElemFactory \
+            or type(self.elem) == elem_manager.ElemSpecial:
             self.edit_goal.setEnabled(True)
             self.edit_beacon.setEnabled(True)
             self.grid_module.setEnabled(True)
@@ -263,12 +264,12 @@ class EditWidget(QWidget):
         
         self.setEnabled(True)
         #그룹, 커스텀
-        if type(elem) != elem_manager.ElemFactory:
+        if type(elem) in [elem_manager.ElemGroup, elem_manager.ElemCustom]:
             self.edit_beacon.setText('0')
             self.grid_module.resetInfo()
             self.edit_power.setText(common_func.getAmountRound(elem.energy_elect))
             self.edit_fuel.setText(common_func.getAmountRound(elem.energy_fuel))
-        #팩토리 전용
+        #팩토리, 스페셜
         else:
             self.edit_goal.setText(common_func.getAmountPerTime(elem.num_goal, 5, bUnit=False, bTimeStr=False))
             self.edit_beacon.setText(str(elem.beacon))
@@ -424,8 +425,13 @@ class GridIcon(QVBoxLayout):
     def onClickItem(self):
         global edit_widget
         
-        custom = type(self.elem) == elem_manager.ElemCustom
-        dlg = common_class.ChangePopup(item_manager.getPopupRecipeList(), 'item', custom)
+        if type(self.elem) == elem_manager.ElemSpecial:
+            name_factory = self.elem.factory
+            # TODO : 제작
+            dlg = common_class.ChangePopup(item_manager.getPopupRecipeList(), 'item', False)
+        else:
+            custom = type(self.elem) == elem_manager.ElemCustom
+            dlg = common_class.ChangePopup(item_manager.getPopupRecipeList(), 'item', custom)
         ret = dlg.exec_()
         if ret == 1:
             item = item_manager.map_item[dlg.selected]
@@ -435,7 +441,8 @@ class GridIcon(QVBoxLayout):
     def onClickRecipe(self):
         global edit_widget
         
-        if self.elem is None or self.elem.item_goal is None:
+        if self.elem is None or self.elem.item_goal is None\
+            or type(sele.elem) == elem_manager.ElemSpecial:
             return
             
         list_recipe = []
@@ -457,7 +464,8 @@ class GridIcon(QVBoxLayout):
     def onClickFactory(self):
         global edit_widget
         
-        if self.elem is None or self.elem.item_goal is None:
+        if self.elem is None or self.elem.item_goal is None\
+            or type(sele.elem) == elem_manager.ElemSpecial:
             return
             
         list_factory = item_manager.getFactoryListByRecipe(self.elem.recipe)
@@ -473,10 +481,9 @@ class GridIcon(QVBoxLayout):
             group_tree.tree_widget.updateItem(self.elem)
         
     def setEnabled(self, bEnable):
-        bFactory = type(self.elem) == elem_manager.ElemFactory
         if bEnable:
             self.bt_item.setEnabled(True)
-            if not bFactory:
+            if type(self.elem) != elem_manager.ElemFactory:
                 self.bt_recipe.setEnabled(False)
                 self.bt_factory.setEnabled(False)
             else:
