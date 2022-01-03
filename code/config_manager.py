@@ -89,7 +89,7 @@ def read_config():
 def init_config():
     global config_path, config_path_default, path_factorio, path_mods
     
-    if len(sys.argv) > 2:
+    if len(sys.argv) >= 2:
         config_path = sys.argv[1]
         if not os.path.exists(config_path):
             import log_manager
