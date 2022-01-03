@@ -210,7 +210,6 @@ class EditWidget(QWidget):
             self.edit_beacon.setEnabled(False)
             self.edit_power.setEnabled(False)
             self.edit_fuel.setEnabled(False)
-            self.edit_power.setEnabled(False)
             self.edit_pollution.setEnabled(False)
             self.grid_module.setEnabled(False)
             return
@@ -220,23 +219,31 @@ class EditWidget(QWidget):
         self.edit_factories.setEnabled(True)
         self.grid_icon.setEnabled(True)
         
-        #각자
-        self.edit_goal.setEnabled(False)
-        self.edit_beacon.setEnabled(False)
-        self.grid_module.setEnabled(False)
-        self.edit_power.setEnabled(False)
-        self.edit_fuel.setEnabled(False)
-        self.edit_pollution.setEnabled(False)
-        
-        if type(self.elem) == elem_manager.ElemCustom:
-            self.edit_power.setEnabled(True)
-            self.edit_fuel.setEnabled(True)
-            self.edit_pollution.setEnabled(True)
+        # Enable > Disable 하면 포커스가 옮겨져서 귀찮다... 각자 설정
         if type(self.elem) == elem_manager.ElemFactory \
             or type(self.elem) == elem_manager.ElemSpecial:
             self.edit_goal.setEnabled(True)
             self.edit_beacon.setEnabled(True)
+            self.edit_power.setEnabled(False)
+            self.edit_fuel.setEnabled(False)
+            self.edit_pollution.setEnabled(False)
             self.grid_module.setEnabled(True)
+            
+        if type(self.elem) == elem_manager.ElemGroup:
+            self.edit_goal.setEnabled(False)
+            self.edit_beacon.setEnabled(False)
+            self.edit_power.setEnabled(False)
+            self.edit_fuel.setEnabled(False)
+            self.edit_pollution.setEnabled(False)
+            self.grid_module.setEnabled(False)
+            
+        if type(self.elem) == elem_manager.ElemCustom:
+            self.edit_goal.setEnabled(False)
+            self.edit_beacon.setEnabled(False)
+            self.edit_power.setEnabled(True)
+            self.edit_fuel.setEnabled(True)
+            self.edit_pollution.setEnabled(True)
+            self.grid_module.setEnabled(False)
         
     def resetInfo(self):
         self.elem = None
