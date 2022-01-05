@@ -350,7 +350,7 @@ class EditWidget(QWidget):
         group_tree.tree_widget.updateItem(self.elem)
         
     def onClickChangeCustom(self, isResult, name):
-        dlg = common_class.ChangePopup(item_manager.getPopupRecipeList(), 'item', hidden=True, group=True)
+        dlg = common_class.ChangePopup(item_manager.list_item_group, 'item', hidden=True, group=True)
         ret = dlg.exec_()
         if ret == 1:
             if name == dlg.selected:
@@ -439,7 +439,7 @@ class GridIcon(QVBoxLayout):
             dlg = common_class.ChangePopup(list_item, 'item', False)
         else:
             hidden = type(self.elem) in [elem_manager.ElemGroup, elem_manager.ElemCustom]
-            dlg = common_class.ChangePopup(item_manager.getPopupRecipeList(), 'item', hidden=hidden, group=True)
+            dlg = common_class.ChangePopup(item_manager.list_item_group, 'item', hidden=hidden, group=True)
         ret = dlg.exec_()
         if ret == 1:
             item = item_manager.map_item[dlg.selected]

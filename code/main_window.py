@@ -36,7 +36,7 @@ class MainWindow(QMainWindow):
         self.initUI()
         self.loadTemplate()
         #TODO : Icon Load
-        list = item_manager.getSortedItemList()
+        list = item_manager.list_item_sorted
         
     def initUI(self):
         self.title = config_manager.name_app

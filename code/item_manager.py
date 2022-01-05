@@ -21,7 +21,7 @@ map_locale_1st = dict()
 map_locale_2nd = dict()
 
 list_item_sorted = []
-list_recipe_popup = []
+list_item_group = []
 
 map_special_sub = dict()
 
@@ -690,48 +690,47 @@ class ItemRapper:
         self.list_sub = []
             
 def sortItemList():
-    global list_recipe_popup, map_item, map_recipe, map_group, map_subgroup
+    global list_item_group, map_item, map_recipe, map_group, map_subgroup
     global list_item_sorted
     
-    # 아이템 정렬
-    list_item_sorted = list(map_item.values())
-    list_item_sorted.sort(key=lambda elem: elem.order)
-    
     # 아이템 초기화 & 정렬
-    for group in map_group.values():
+    list_group = list(map_group.values())
+    list_group.sort(key=lambda elem: elem.order)        #그룹 정렬
+    
+    for group in list_group:
         rap_g = ItemRapper(group)
         bAddGroup = False
         
+        list_subgroup = []
         for name_subgroup in group.list_subgroup:
             subgroup = map_subgroup[name_subgroup]
+            list_subgroup.append(subgroup)
+        list_subgroup.sort(key=lambda elem: elem.order) #서브그룹 정렬
+        
+        for subgroup in list_subgroup:
             rap_s = ItemRapper(subgroup)
             bAddSubgroup = False
             
+            list_item = []
             for name_item in subgroup.list_item:
                 item = map_item[name_item]
+                list_item.append(item)
+            list_item.sort(key=lambda elem: elem.order) #아이템 정렬
                 
+            for item in list_item:
                 bAddGroup = True
                 bAddSubgroup = True
                 rap_s.list_sub.append(item)
                 
+                # 그룹 없이 그냥 아이템
+                list_item_sorted.append(item)
+                
             if bAddSubgroup:    #서브그룹 추가 & 아이템 정렬
-                rap_s.list_sub.sort(key=lambda elem: elem.order)
                 rap_g.list_sub.append(rap_s)
         
         if bAddGroup:           #그룹 추가 & 서브그룹 정렬
-            rap_g.list_sub.sort(key=lambda elem: elem.item.order)
-            list_recipe_popup.append(rap_g)
+            list_item_group.append(rap_g)
             
-    list_recipe_popup.sort(key=lambda elem: elem.item.order)    #그룹 정렬
-    
-def getSortedItemList():
-    global list_item_sorted
-    return list_item_sorted
-    
-def getPopupRecipeList():
-    global list_recipe_popup
-    return list_recipe_popup
-
 # save 관련 코드 ------------------------------
 
 def setTemplateDir(path_template_dir):

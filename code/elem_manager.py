@@ -415,7 +415,7 @@ class ElemFactory(Elem):
     def changeItem(self, item, bUpdate=True, bResetRecipe=True):
         if item is None:
             if self.recipe is None:
-                item = item_manager.getSortedItemList()[0]
+                item = item_manager.list_item_sorted[0]
             else:
                 name_item = self.recipe.getListProduct()[0][0]
                 item = item_manager.map_item[name_item]
@@ -823,7 +823,7 @@ class ElemCustom(Elem):
     
     def addSubItem(self, isResult):
         idx = 0
-        list_item = item_manager.getSortedItemList()
+        list_item = item_manager.list_item_sorted
         name_item = list_item[idx].name
         map = self.map_material
         if isResult: map = self.map_product

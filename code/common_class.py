@@ -89,10 +89,10 @@ class ChangePopup(QDialog):
         return bt_item
         
     def initAllItem(self):
-        list_recipe_popup = self.list_item
+        list_item_group = self.list_item
         
         y = 0
-        for rap_g in list_recipe_popup:
+        for rap_g in list_item_group:
             self.grid.addWidget(QLabel(rap_g.item.getName()), y, 0, 1, -1)
             self.grid.setRowMinimumHeight(y, 30)
             y += 1
