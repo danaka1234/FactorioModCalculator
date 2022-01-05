@@ -220,8 +220,7 @@ class EditWidget(QWidget):
         self.grid_icon.setEnabled(True)
         
         # Enable > Disable 하면 포커스가 옮겨져서 귀찮다... 각자 설정
-        if type(self.elem) == elem_manager.ElemFactory \
-            or type(self.elem) == elem_manager.ElemSpecial:
+        if type(self.elem) in [elem_manager.ElemFactory, elem_manager.ElemSpecial]:
             self.edit_goal.setEnabled(True)
             self.edit_beacon.setEnabled(True)
             self.edit_power.setEnabled(False)
@@ -351,7 +350,7 @@ class EditWidget(QWidget):
         group_tree.tree_widget.updateItem(self.elem)
         
     def onClickChangeCustom(self, isResult, name):
-        dlg = common_class.ChangePopup(item_manager.getPopupRecipeList(), 'item', custom=True)
+        dlg = common_class.ChangePopup(item_manager.getPopupRecipeList(), 'item', hidden=True, group=True)
         ret = dlg.exec_()
         if ret == 1:
             if name == dlg.selected:
@@ -399,7 +398,7 @@ class GridIcon(QVBoxLayout):
         self.resetInfo()
         self.elem = elem
         
-        if type(elem) != elem_manager.ElemFactory:
+        if type(self.elem) in [elem_manager.ElemGroup, elem_manager.ElemCustom]:
             if elem.item_goal is not None:
                 self.bt_item.setIcon(elem.item_goal.getIcon())
                 self.bt_item.setToolTip(elem.item_goal.getName())
@@ -433,12 +432,14 @@ class GridIcon(QVBoxLayout):
         global edit_widget
         
         if type(self.elem) == elem_manager.ElemSpecial:
-            name_factory = self.elem.factory
-            # TODO : 제작
-            dlg = common_class.ChangePopup(item_manager.getPopupRecipeList(), 'item', False)
+            list_item = []
+            for elem in self.elem.factory.list_result:
+                item = item_manager.map_item[elem[1]]
+                list_item.append(item)
+            dlg = common_class.ChangePopup(list_item, 'item', False)
         else:
-            custom = type(self.elem) == elem_manager.ElemCustom
-            dlg = common_class.ChangePopup(item_manager.getPopupRecipeList(), 'item', custom)
+            hidden = type(self.elem) in [elem_manager.ElemGroup, elem_manager.ElemCustom]
+            dlg = common_class.ChangePopup(item_manager.getPopupRecipeList(), 'item', hidden=hidden, group=True)
         ret = dlg.exec_()
         if ret == 1:
             item = item_manager.map_item[dlg.selected]
@@ -449,7 +450,7 @@ class GridIcon(QVBoxLayout):
         global edit_widget
         
         if self.elem is None or self.elem.item_goal is None\
-            or type(sele.elem) == elem_manager.ElemSpecial:
+            or type(self.elem) == elem_manager.ElemSpecial:
             return
             
         list_recipe = []
@@ -472,7 +473,7 @@ class GridIcon(QVBoxLayout):
         global edit_widget
         
         if self.elem is None or self.elem.item_goal is None\
-            or type(sele.elem) == elem_manager.ElemSpecial:
+            or type(self.elem) == elem_manager.ElemSpecial:
             return
             
         list_factory = item_manager.getFactoryListByRecipe(self.elem.recipe)
@@ -490,7 +491,7 @@ class GridIcon(QVBoxLayout):
     def setEnabled(self, bEnable):
         if bEnable:
             self.bt_item.setEnabled(True)
-            if type(self.elem) != elem_manager.ElemFactory:
+            if type(self.elem) in [elem_manager.ElemGroup, elem_manager.ElemCustom]:
                 self.bt_recipe.setEnabled(False)
                 self.bt_factory.setEnabled(False)
             else:
@@ -552,9 +553,8 @@ class GridModule(QGridLayout):
             
     def updateGridModule(self):
         global edit_widget
-        
         elem = edit_widget.elem
-        if type(elem) != elem_manager.ElemFactory:
+        if type(elem) in [elem_manager.ElemGroup, elem_manager.ElemCustom]:
             return
             
         self.resetInfo()
@@ -604,7 +604,7 @@ class GridModule(QGridLayout):
         global edit_widget
         
         elem = edit_widget.elem
-        if type(elem) != elem_manager.ElemFactory:
+        if type(elem) in [elem_manager.ElemGroup, elem_manager.ElemCustom]:
             return
         if elem.recipe is None:
             return

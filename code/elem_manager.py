@@ -525,9 +525,8 @@ class ElemFactory(Elem):
                 
         production = num_recipe * ( 1 + self.productivity )
                 
-        # 속도 = 공장 속도 * 모듈 속도 * 비콘
-        speed = self.factory.crafting_speed * \
-                (1 + self.speed) * (1 + self.beacon / 100)
+        # 속도 = 공장 속도 * 모듈 속도
+        speed = self.factory.crafting_speed * (1 + self.speed)
         
         # 개당 생산 시간 = 레시피 시간 / 속도
         time_recipe = self.recipe.getTime()
@@ -586,7 +585,7 @@ class ElemFactory(Elem):
             self.emission = self.factory.energy_source_emissions * self.num_factory * (1 + self.pollution)
             energy = \
                 self.num_factory * self.factory.energy_usage * (1 + self.consumption) \
-                + math.ceil(self.num_factory) * self.factory.drain
+                + math.ceil(self.num_factory) * self.factory.drain * (1 + self.consumption)
             if self.factory.energy_source_type == 'electric':
                 self.energy_elect = energy
             else:
@@ -621,7 +620,6 @@ class ElemFactory(Elem):
             material = self.map_material[key]
             num_material = self.recipe.getMaterialNumByName(key)
             material.num_need = num_material * ratio / bonus
-            
         
     def updateModule(self):
         #backup
@@ -654,6 +652,9 @@ class ElemFactory(Elem):
                     self.consumption += value
                 elif key == 'pollution':
                     self.pollution += value
+                    
+        # 비컨은 여기에...
+        self.speed += self.beacon / 100
                     
         self.consumption = max(-0.8, self.consumption)
         
@@ -746,7 +747,7 @@ class ElemGroup(Elem):
                     map_all[name_product] = 0
                 map_all[name_product] = map_all[name_product] + product.num_real
                 
-            if type(child) == ElemFactory:
+            if type(child) in [ElemFactory, ElemSpecial]:
                 if child.factory is not None:
                     if child.factory.energy_source_type == 'electric':
                         self.energy_elect   += child.energy_elect
@@ -868,6 +869,7 @@ class ElemSpecial(ElemFactory):
             name_recipe = item_factory.fixed_recipe
             self.recipe = item_manager.map_recipe[name_recipe]
             name_result = item_factory.list_result[0][1]
+            self.changeFactory(item_factory, bUpdate=False)
             self.changeItem(item_manager.map_item[name_result])
             
     def toMap(self):
@@ -934,19 +936,18 @@ class ElemSpecial(ElemFactory):
                 num_recipe = output[1]
                 break
                 
-        production = num_recipe * ( 1 + self.productivity )
+        production = num_recipe
                 
-        
-        # 1개당 속도 = 공장 속도 * 모듈 속도 * 비콘
-        speed_per_1 = self.factory.crafting_speed * \
-                (1 + self.speed) * (1 + self.beacon / 100)
+        # 1개당 속도 = 공장 속도 * 모듈 속도
+        speed_per_1 = self.factory.crafting_speed * (1 + self.speed)
                 
         # 개당 생산 시간 = 레시피 시간 / 속도
         time_recipe = self.recipe.getTime()
         time_per_1 = time_recipe / speed_per_1
                 
-        # 총 시간 = 100개 / 1개 속도 + 발사시간
-        time = time_per_1 * self.factory.rocket_parts_required\
+        # 총 시간 = 1개 시간 * 100개(모듈 고려) + 발사시간(모듈 무시)
+        time = time_per_1 \
+            * self.factory.rocket_parts_required / ( 1 + self.productivity )\
             + self.factory.fixed_time
         
         if self.bFacNumBase:
@@ -955,7 +956,7 @@ class ElemSpecial(ElemFactory):
         else:
             # 공장수 = 결과 * 시간 / 생산량
             self.num_factory = self.num_goal * time / production
-            
+        
         return num_factory != self.num_factory or num_goal != self.num_goal
         
     def resetInOut(self):
@@ -978,7 +979,7 @@ class ElemSpecial(ElemFactory):
         for elem in self.factory.list_result:
             if elem[1] == self.item_goal.name:
                 result = elem
-        num_recipe = elem[2]
+        num_recipe = result[2]
         
         #(초당)생산회수 = 목표 / 레시피 생산
         ratio = self.num_goal / num_recipe
@@ -992,12 +993,11 @@ class ElemSpecial(ElemFactory):
         for key in self.map_material.keys():
             material = self.map_material[key]
             if key == result[0]:
-                num_part = 1
-                num_material = 1
+                num_material = 1 * (1 + self.productivity)
             else:
                 num_part = self.factory.rocket_parts_required
-                num_material = self.recipe.getMaterialNumByName(key)
-            material.num_need = num_material * ratio / bonus * num_part
+                num_material = self.recipe.getMaterialNumByName(key) * num_part
+            material.num_need = num_material * ratio / bonus
             
 def resourceChanged():
     global map_elem

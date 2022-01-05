@@ -55,7 +55,7 @@ class FCITEM:
             list_locale_group = ['item-name', 'recipe-name', 'entity-name', 'equipment-name']
         elif type(self) == ItemGroup or type(self) == ItemSubGroup:
             list_locale_group = ['item-group-name']
-        elif    type(self) == Factory:
+        elif    type(self) in [Factory, SpecialFactory]:
             list_locale_group = ['entity-name', 'item-name']
         
         for group in list_locale_group:
@@ -76,7 +76,7 @@ class FCITEM:
         path = ''
         if type(self) == Item:
             path = self.path_icon
-        elif type(self) in [Recipe, Factory, Module]:
+        elif type(self) in [Recipe, Factory, Module, SpecialFactory]:
             if self.path_icon is not None and self.path_icon != '':
                 path = self.path_icon
             else:
@@ -426,10 +426,6 @@ class Factory(FCITEM):
         self.energy_source_type = None
         self.energy_source_emissions = 0
         
-        if self.name is None:
-            #print('Factory', self.name)
-            import traceback
-            #traceback.print_stack()
         item = map_item[self.name]
         self.order = item.order
         
@@ -887,6 +883,7 @@ def loadTemplateFromDir(args):
     ['subgroup', ItemSubGroup],\
     ['item',     Item],\
     ['recipe',   Recipe],\
+    ['factory' , Factory  ],\
     ['specialFactory'  , SpecialFactory  ],\
     ['module',   Module],\
     ]

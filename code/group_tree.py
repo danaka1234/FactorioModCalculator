@@ -231,7 +231,7 @@ class ElemTreeItem(QTreeWidgetItem):
         iconSize = option_widget.icon_size
         
         widget_icon = QLabel()
-        if type(elem) == elem_manager.ElemFactory and elem.recipe is not None:
+        if type(elem) in [elem_manager.ElemFactory, elem_manager.ElemSpecial] and elem.recipe is not None:
             widget_icon.setPixmap(elem.recipe.getPixmap(iconSize, iconSize))
         elif type(elem) in [elem_manager.ElemGroup, elem_manager.ElemCustom]\
             and elem.item_goal is not None: 
@@ -256,7 +256,7 @@ class ElemTreeItem(QTreeWidgetItem):
         label1 = QLabel()
         if type(elem) == elem_manager.ElemGroup:
             label1.setPixmap(common_func.getCommonPixmap('factorio', iconSize, iconSize))
-        elif type(elem) == elem_manager.ElemFactory:
+        elif type(elem) in [elem_manager.ElemFactory, elem_manager.ElemSpecial]:
             if elem.factory is not None:
                 label1.setPixmap(elem.factory.getPixmap(iconSize, iconSize))
             else:
@@ -269,7 +269,7 @@ class ElemTreeItem(QTreeWidgetItem):
         
         #Module
         widget_module = QWidget()
-        if type(elem) == elem_manager.ElemFactory :
+        if type(elem) in [elem_manager.ElemFactory, elem_manager.ElemSpecial]:
             grid_module = QGridLayout()
             widget_module.setLayout(grid_module)
             x_max = 4
@@ -292,7 +292,7 @@ class ElemTreeItem(QTreeWidgetItem):
         widget_etc.setLayout(grid_etc)
         grid_etc.setColumnStretch(3,1)
         row = 0
-        if type(elem) != elem_manager.ElemFactory:
+        if type(self.elem) in [elem_manager.ElemGroup, elem_manager.ElemCustom]:
             if elem.energy_elect != 0:
                 label1 = QLabel()
                 label1.setPixmap(common_func.getCommonPixmap('electric', iconSize, iconSize))

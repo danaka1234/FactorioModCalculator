@@ -14,18 +14,18 @@ from PyQt5.QtWidgets    import QWidget, QDialog
     
 class ChangePopup(QDialog):
     #open_dialog 참고
-    def __init__(self, list_item, item_type, custom=False):
+    def __init__(self, list_item, title, hidden=False, group=False):
         super().__init__()
         self.selected = ''
         self.list_item = list_item
-        self.item_type = item_type
+        self.hidden = hidden
+        self.group = group
         self.list_button = []
-        self.custom = custom
         
-        self.initUI()
+        self.initUI(title)
         self.initItems()
         
-    def initUI(self):
+    def initUI(self, title):
         vbox = QVBoxLayout()
         sa = QScrollArea()
         sa.setWidgetResizable(True)
@@ -40,14 +40,8 @@ class ChangePopup(QDialog):
         
         pos = QCursor().pos()
         width = 380
-        if self.item_type == 'item':
+        if self.group:
             height = 800
-        elif self.item_type == 'link item':
-            height = min(800, \
-                (\
-                    int(len(self.list_item[0]) / 10 + 1) + \
-                    int(len(self.list_item[1]) / 10 + 1)  \
-                ) * 60 + 60)
         else:
             height = min(800, int(len(self.list_item) / 10 + 1) * 60)
         x = pos.x() - width/2
@@ -55,17 +49,15 @@ class ChangePopup(QDialog):
         
         self.grid.setColumnStretch(11, 1)
         
-        self.setWindowTitle('Select '+ self.item_type)
+        self.setWindowTitle('Select '+ title)
         self.setGeometry(x, y, width, height)
         
     def initItems(self):
         y = 0
-        if self.item_type in ['recipe','factory', 'module']:
+        if not self.group:
             self.addButtons(self.list_item)
-        elif self.item_type == 'item':
-            self.initAllItem()
         else:
-            pass
+            self.initAllItem()
         self.grid.setRowStretch(y+1, 1)
             
     def addButtons(self, list_item, y=0, bAddProduct=False, bProduct=False):
@@ -107,7 +99,7 @@ class ChangePopup(QDialog):
             for rap_s in rap_g.list_sub:
                 x = 0
                 for item in rap_s.list_sub:
-                    if not self.custom and \
+                    if not self.hidden and \
                         (len(item.list_madeby) == 0 or 'hidden' in item.flags):
                         continue
                     if x >= 10:
