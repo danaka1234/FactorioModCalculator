@@ -186,11 +186,7 @@ class ElemTreeItem(QTreeWidgetItem):
         for i in range(0, len(list_key)):
             key = list_key[i]
             elemSub = map[key]
-            num = 0
-            if type(elemSub) == elem_manager.ElemMaterial:
-                num = elemSub.num_need
-            elif type(elemSub) == elem_manager.ElemProduct:
-                num = elemSub.num_real
+            num = elemSub[0]
             item = item_manager.map_item[key]
             
             text = common_func.getAmountPerTime(num)

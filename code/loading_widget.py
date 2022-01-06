@@ -29,6 +29,7 @@ QMutex, QWaitCondition은 함께 쓰는거고, 지금은 쓸일 없는듯
 # 귀찮아 대충하자
 
 is_continue_loading = False
+load_widget = None
 
 class LoadRapper():
     def __init__(self, msg):
@@ -59,6 +60,7 @@ class LoadingThread(QThread):
         self.bFinish = False
         self.bWorking = False
         self.list_load = []
+        
         #list_load
         #LoadRapper(msg, list_sub[])
         #LoadRapperSub(msg, func)
@@ -99,10 +101,13 @@ class LoadingThread(QThread):
 
 class LoadingWidget(QWidget):
     def __init__(self, main_window):
+        global load_widget
         super().__init__()
         self.main_window = main_window
         self.thread = LoadingThread(self)
         self.initUI()
+        
+        load_widget = self
         
     def __del__(self):
         if self.thread.bWorking:

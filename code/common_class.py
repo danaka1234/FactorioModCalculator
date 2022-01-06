@@ -113,8 +113,6 @@ class ChangePopup(QDialog):
     def onButton(self):
         bt = self.sender()
         self.selected = bt.name_item
-        #if self.item_type == 'link item':
-        #    self.bProduct = bt.bProduct
         self.accept()
         
                         

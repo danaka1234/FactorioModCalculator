@@ -1,7 +1,6 @@
 # coding: utf-8
 import os, traceback
 import option_widget, item_manager
-import item_manager
 
 from PyQt5.QtGui        import QPixmap
 from PyQt5.QtCore       import Qt
@@ -11,6 +10,8 @@ https://doc.qt.io/qtforpython-5/PySide2/QtGui/QPixmap.html
 https://python.hotexamples.com/examples/PyQt4.QtGui/QPixmap/fill/python-qpixmap-fill-method-examples.html
 https://wikidocs.net/145722
 '''
+
+version_current = 0.1
 
 def getAmountPerTime(amount, num_for_round = 3, bUnit = True, bTimeStr = True):
     time = option_widget.time_set[option_widget.time_config]

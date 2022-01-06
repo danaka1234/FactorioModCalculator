@@ -134,13 +134,13 @@ class EditWidget(QWidget):
         list_pro = []
 
         #self.grid_mat
-        for material in self.elem.map_material.values():
-            elem_sub = [material.name_material, material.num_need]
+        for material in self.elem.map_material.items():
+            elem_sub = [material[0], material[1][0]]
             list_mat.append(elem_sub)
         
         #self.grid_pro
-        for product  in self.elem.map_product .values():
-            elem_sub = [product .name_product, product .num_real]
+        for product in self.elem.map_product.items():
+            elem_sub = [product[0], product[1][0]]
             list_pro.append(elem_sub)
 
         self.init_grid_item_list(list_mat, False)

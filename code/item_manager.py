@@ -6,7 +6,7 @@ import shutil
 from PyQt5.QtGui        import QPixmap, QIcon
 
 import option_widget, log_manager, loading_widget, lua_manager
-import config_manager, json_manager
+import config_manager, json_manager, common_func
 
 # data 관련 변수 ------------------------------
 map_item = dict()
@@ -27,7 +27,6 @@ map_special_sub = dict()
 
 # save 관련 변수 ------------------------------
 path_tempdir = ''
-version_current = 0.1
 
 name_template_json = 'fmc_template.json'
 
@@ -812,13 +811,13 @@ def copyDefaultIcon():
     shutil.copyfile(path_fuel_icon, path_dest_fuel_icon)
     
 def saveTemplateFile():
-    global name_template_json, version_current
+    global name_template_json
     global map_item, map_recipe, map_group, map_subgroup, map_factory, map_module
     global map_special_factory
     
     map = {}
     
-    map['version'] = version_current
+    map['version'] = common_func.version_current
     
     #item 등
     list_map = [\
@@ -851,7 +850,7 @@ def saveTemplateFile():
     json_manager.save_json(path_template_json, map)
     
 def loadTemplateFromDir(args):
-    global name_template_json, version_current
+    global name_template_json
     load_widget = args[0]
     path_template_dir = args[1]
     path_template_json = os.path.join(path_template_dir, name_template_json)
@@ -870,7 +869,8 @@ def loadTemplateFromDir(args):
     map = json_manager.load_json(path_template_json)
     
     version = map['version']
-    if version != version_current:
+    # TODO : 버전별 작업하기
+    if version != common_func.version_current:
         if load_widget is not None:
             msg = 'Template version is not same'
             load_widget.setMsg(msg, True)
