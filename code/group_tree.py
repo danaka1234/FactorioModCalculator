@@ -339,6 +339,9 @@ class ElemTreeItem(QTreeWidgetItem):
         treeWidget.setItemWidget(self, 6, widget_module)
         treeWidget.setItemWidget(self, 7, widget_etc)
         
+        #https://doc.qt.io/archives/qtjambi-4.5.2_01/com/trolltech/qt/core/Qt.GlobalColor.html
         if type(elem) == elem_manager.ElemGroup :
             self.setBackground(0, Qt.gray);
+        if type(elem) == elem_manager.ElemCustom :
+            self.setBackground(0, Qt.cyan);
         
