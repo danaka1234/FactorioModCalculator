@@ -7,10 +7,6 @@ from PyQt5.QtWidgets    import QPushButton, QLabel, QScrollArea
 from PyQt5.QtWidgets    import QVBoxLayout, QHBoxLayout, QGridLayout
 from PyQt5.QtWidgets    import QWidget, QDialog
 
-#QTooltip : html 문법으로 추정됨
-#테이블 세로 중앙
-#https://zetawiki.com/wiki/%ED%85%8C%EC%9D%B4%EB%B8%94_TD_%EC%84%B8%EB%A1%9C_%EC%A4%91%EC%95%99
-#https://www.codingfactory.net/10232
     
 class ChangePopup(QDialog):
     #open_dialog 참고
@@ -20,7 +16,6 @@ class ChangePopup(QDialog):
         self.list_item = list_item
         self.hidden = hidden
         self.group = group
-        self.list_button = []
         
         self.initUI(title)
         self.initItems()
@@ -85,8 +80,6 @@ class ChangePopup(QDialog):
             bt_item.bProduct = bProduct
         
         self.grid.addWidget(bt_item, y, x)
-        self.list_button.append([bt_item])
-        return bt_item
         
     def initAllItem(self):
         list_item_group = self.list_item
@@ -115,4 +108,3 @@ class ChangePopup(QDialog):
         self.selected = bt.name_item
         self.accept()
         
-                        

@@ -8,12 +8,12 @@ from PyQt5.QtCore       import QSize
 from PyQt5.QtWidgets    import QWidget, QFrame, QWidgetItem
 
 #draw
-from PyQt5.QtGui       import QPixmap, QIcon
+from PyQt5.QtGui       import QPixmap, QIcon, QFont, QCursor
 
 #layout
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout
 from PyQt5.QtWidgets import QLabel, QLineEdit, QGroupBox
-from PyQt5.QtWidgets import QPushButton, QMessageBox
+from PyQt5.QtWidgets import QPushButton, QMessageBox, QDialog, QScrollArea
 from PyQt5.QtGui     import QDoubleValidator, QIntValidator
 #https://www.delftstack.com/tutorial/pyqt5/pyqt-grid-layout/
 #grid layout 셀 합치기
@@ -176,7 +176,7 @@ class EditWidget(QWidget):
                 )
                 
                 widget_num = QLineEdit()
-                widget_num.setFixedWidth(80)
+                widget_num.setFixedWidth(60)
                 widget_num.setValidator(QDoubleValidator())
                 widget_num.setText(common_func.getAmountPerTime(elem[1], bTimeStr=False))
                 widget_num.editingFinished.connect(\
@@ -186,13 +186,22 @@ class EditWidget(QWidget):
             grid.addWidget(widget_icon, i, 0)
             grid.addWidget(widget_num, i, 1)
             
+            size_button = 20
+            
+            bt_link = QPushButton("L")
+            bt_link.setFixedSize(size_button, size_button)
+            bt_link.clicked.connect(\
+                partial(self.onClickLink, isResult, elem[0])\
+            )
+            grid.addWidget(bt_link, i, 2)
+            
             if type(self.elem) == elem_manager.ElemCustom:
                 bt_del = QPushButton("-")
-                bt_del.setFixedSize(20, 20)
+                bt_del.setFixedSize(size_button, size_button)
                 bt_del.clicked.connect(\
                     partial(self.onClickDelCustom, isResult, elem[0])\
                 )
-                grid.addWidget(bt_del, i, 2)
+                grid.addWidget(bt_del, i, 3)
         
         if type(self.elem) == elem_manager.ElemCustom:
             bt_add = QPushButton("+")
@@ -343,6 +352,15 @@ class EditWidget(QWidget):
         self.elem.addSubItem(isResult)
         self.set_matearial_product()
         group_tree.tree_widget.updateItem(self.elem)
+        
+    def onClickLink(self, isResult, name):
+        dlg = LinkPopup(name, isResult)
+        ret = dlg.exec_()
+        if ret == 1:
+        # TODO : 링크 추가
+            print(dlg.selected)
+            return
+        pass
     
     def onClickDelCustom(self, isResult, name):
         self.elem.delSubItem(isResult, name)
@@ -545,7 +563,6 @@ class GridModule(QGridLayout):
         self.label_mod_poll     .setText('0')
         
         self.list_bt.clear()
-        list_tmp = []
         for i in reversed(range(self.grid_btn.count())): 
             widget = self.grid_btn.itemAt(i).widget()
             widget.deleteLater()
@@ -624,5 +641,198 @@ class GridModule(QGridLayout):
             elem.changeModule(list_module)
             edit_widget.setElem(elem)
             group_tree.tree_widget.updateItem(elem)
+
+# 현재 링크 상태 보여줌
+class LinkPopup(QDialog):
+    def __init__(self, name_item, is_result):
+        super().__init__()
+        self.selected = ''
+        self.name_item = name_item
+        self.is_result = is_result
+        
+        self.initUI()
+        self.drawGrid()
+        
+    def initUI(self):
+        vbox = QVBoxLayout()
+        sa = QScrollArea()
+        sa.setWidgetResizable(True)
+        widgetTop = QWidget()
+        self.grid = QGridLayout()
+        self.grid.setSpacing(0)
+        
+        widgetTop.setLayout(self.grid)
+        sa.setWidget(widgetTop)
+        vbox.addWidget(sa)
+        self.setLayout(vbox)
+        # vbox > sa > widgetTop > self.grid
+        
+        pos = QCursor().pos()
+        width = 250
+        height = 400
+        x = pos.x() - width/2
+        y = max(pos.y() - height/2, 30)
+        
+        if self.is_result:  title = 'Link ingredient'
+        else:               title = 'Link result'
+        self.setWindowTitle(title)
+        self.setGeometry(x, y, width, height)
+        
+    def drawGrid(self):
+        for i in reversed(range(self.grid.count())): 
+            widget = self.grid.itemAt(i).widget()
+            widget.deleteLater()
+            
+        item = item_manager.map_item[self.name_item]
+        iconSize = 32
+        label_item = QLabel()
+        label_item.setPixmap(item.getPixmap(iconSize, iconSize))
+        self.grid.addWidget(label_item, 0, 0)
+        self.grid.addWidget(QLabel(item.getName()), 0, 1)
+        
+        row = 1
+        
+        global edit_widget
+        if self.is_result:
+            map = edit_widget.elem.map_product
+            list_link = map[self.name_item][1]
+        else:
+            map = edit_widget.elem.map_material
+            id_link = map[self.name_item][1]
+            if id_link == -1:
+                list_link = []
+            else:
+                list_link = [id_link]
+        
+        for id_link in list_link:
+            self.addLink(row, id_link)
+            row += 1
+        
+        size_button = 32
+        bt_add = QPushButton("+")
+        bt_add.setFixedSize(size_button, size_button)
+        bt_add.clicked.connect(self.onClickAdd)
+        self.grid.addWidget(bt_add, row, 0)
+        row += 1
+        
+        self.grid.setRowStretch(row, 1)
+                
+    def addLink(self, y, id_elem):
+        elem = elem_manager.map_elem[id_elem]
+        item = self.item_goal
+        
+        iconSize = 32
+        label_item = QLabel()
+        label_item.setPixmap(item.getPixmap(iconSize, iconSize))
+        
+        label_text = QLabel('ID:' + str(elem.id) + '\n' + elem.name)
+        
+        size_button = 20
+        bt_del = QPushButton("-")
+        bt_del.setFixedSize(size_button, size_button)
+        bt_del.clicked.connect(\
+            partial(self.onClickDel, id_elem)\
+        )
+        
+        self.grid.addWidget(label_item, y, 0)
+        self.grid.addWidget(label_text, y, 1)
+        self.grid.addWidget(bt_del, y, 2)
+        
+    def onClickDel(self, id_elem):
+        print('del')
+        
+    def onClickAdd(self):
+        dlg = LinkAddPopup(self.name_item, self.is_result)
+        ret = dlg.exec_()
+        if ret == 1:
+            pass
+        pass
+
+# 기존 링크 + 새로 추가할 버튼 보여줌
+class LinkAddPopup(QDialog):
+    def __init__(self, name_item, is_result):
+        super().__init__()
+        self.selected = ''
+        self.name_item = name_item
+        self.is_result = is_result
+        
+        self.initUI()
+        self.drawGrid()
+        
+    def initUI(self):
+        vbox = QVBoxLayout()
+        sa = QScrollArea()
+        sa.setWidgetResizable(True)
+        widgetTop = QWidget()
+        self.grid = QGridLayout()
+        self.grid.setSpacing(0)
+        
+        widgetTop.setLayout(self.grid)
+        sa.setWidget(widgetTop)
+        vbox.addWidget(sa)
+        self.setLayout(vbox)
+        # vbox > sa > widgetTop > self.grid
+        
+        pos = QCursor().pos()
+        width = 200
+        height = 400
+        x = pos.x() - width/2
+        y = max(pos.y() - height/2, 30)
+        
+        self.setWindowTitle('Select Link')
+        self.setGeometry(x, y, width, height)
+        
+    def drawGrid(self):
+        item = item_manager.map_item[self.name_item]
+        group = group_tree.tree_widget.elem_group
+        
+        # find elem
+        list_elem = []
+        for elem in group.list_child:
+            if self.is_result:  map = elem.map_material
+            else:               map = elem.map_product
+            
+            for name_item in map.keys():
+                if self.name_item == name_item:
+                    # 입력은 하나만
+                    if self.is_result and map[name_item][1] != -1:
+                        continue
+                    list_elem.append(elem)
+        
+        # draw elem
+        row = 0
+        for elem in list_elem:
+            self.addLink(row, elem)
+            row += 1
+        
+        # draw add
+        bt_add = QPushButton("New Factory")
+        bt_add.clicked.connect(self.onClickAdd)
+        self.grid.addWidget(bt_add, row, 0, 1, 2)
+        row += 1
+        
+        self.grid.setRowStretch(row, 1)
+        
+    def addLink(self, y, elem):
+        item = elem.item_goal
+        iconSize = 32
+        bt_item = QPushButton()
+        bt_item.setFixedSize(iconSize, iconSize)
+        bt_item.setIconSize(QSize(iconSize, iconSize))
+        bt_item.setIcon(item.getIcon())
+        bt_item.clicked.connect(\
+            partial(self.onClickSelect, elem.id)\
+        )
+        
+        label_text = QLabel('ID:' + str(elem.id) + '\n' + elem.name)
+        
+        self.grid.addWidget(bt_item, y, 0)
+        self.grid.addWidget(label_text, y, 1)
+        
+    def onClickSelect(self, id_elem):
+        pass
+        
+    def onClickAdd(self):
+        pass
 
 # --------------------------- debug

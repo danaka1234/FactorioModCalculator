@@ -11,6 +11,11 @@ https://python.hotexamples.com/examples/PyQt4.QtGui/QPixmap/fill/python-qpixmap-
 https://wikidocs.net/145722
 '''
 
+#Tooltip : html 문법으로 추정됨
+#테이블 세로 중앙
+#https://zetawiki.com/wiki/%ED%85%8C%EC%9D%B4%EB%B8%94_TD_%EC%84%B8%EB%A1%9C_%EC%A4%91%EC%95%99
+#https://www.codingfactory.net/10232
+
 version_current = 0.1
 
 def getAmountPerTime(amount, num_for_round = 3, bUnit = True, bTimeStr = True):

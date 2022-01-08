@@ -225,7 +225,6 @@ class OptionWidget(QWidget):
         
         if icon_size <= 0 :
             icon_size = 32
-            print('check')
             self.editTreeIconSize.setText(str(icon_size))
         if tree_num_max <= 0 :
             tree_col = 5
