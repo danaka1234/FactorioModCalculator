@@ -1,9 +1,8 @@
 # coding: utf-8
 
 import sys, math, os
-import random   #https://docs.python.org/ko/3/library/random.html
-import queue    #https://docs.python.org/ko/3.8/library/queue.html
-                #http://www.daleseo.com/python-priority-queue
+import random
+import queue
 
 import item_manager, common_func, option_widget, loading_widget
 import json_manager, config_manager, item_manager
@@ -522,16 +521,21 @@ class ElemGroup(Elem):
 class ElemCustom(Elem):
     def __init__(self, id_self, group):
         super().__init__(id_self, group)
+        self.recipe_pro = dict()
+        self.recipe_mat = dict()
         
     def toMap(self):
         map = super().toMap()
         map['_type'] = 'custom'
+        map['recipe_pro'] = self.recipe_pro
+        map['recipe_mat'] = self.recipe_mat
         return map
         
     def fromMap(map):
         id = map['id']
         e = ElemCustom(id, None)
-        e.energy_fuel = map['energy_fuel']
+        e.recipe_pro = map['recipe_pro']
+        e.recipe_mat = map['recipe_mat']
         return e
     
     def deleteElem(self):
@@ -542,6 +546,21 @@ class ElemCustom(Elem):
         global factories_changed
         factories_changed = True
         
+    def changeFacNum(self, num_factory):
+        if self.num_factory == num_factory: return
+        self.num_factory = num_factory
+        self.updateCustom()
+        
+    def updateCustom(self):
+        self.map_product = dict()
+        self.map_material = dict()
+        for name in self.recipe_pro.keys():
+            self.map_product[name] = [self.recipe_pro[name] * self.num_factory, []]
+        for name in self.recipe_mat.keys():
+            self.map_material[name] = [self.recipe_mat[name] * self.num_factory, -1]
+            
+        self.group.updateGroupInOut()
+        
     def changeEtc(self, power, fuel, pollution):
         self.energy_elect = power
         self.energy_fuel = fuel
@@ -549,51 +568,48 @@ class ElemCustom(Elem):
         
         self.group.updateGroupInOut()
         
-    def changeNum(self, isResult, name, num):
-        if isResult:
-            self.map_product[name][0] = num
-        else:
-            self.map_material[name][0] = num
-            
-        self.group.updateGroupInOut()
+    def editSubNum(self, isResult, name, num):
+        if isResult:    self.recipe_pro[name] = num
+        else:           self.recipe_mat[name] = num
+        self.updateCustom()
     
     def addSubItem(self, isResult):
         idx = 0
         list_item = item_manager.list_item_sorted
         name_item = list_item[idx].name
-        map = self.map_material
-        if isResult: map = self.map_product
-            
+        if isResult:    map = self.recipe_pro
+        else:           map = self.recipe_mat
+        
         while map.get(name_item) is not None:
             idx += 1
             name_item = list_item[idx].name
             
         if isResult:
-            self.map_product[name_item] = [1, []]
+            self.recipe_pro[name_item] = 1
         else:
-            self.map_material[name_item] = [1, -1]
+            self.recipe_mat[name_item] = 1
             
-        self.group.updateGroupInOut()
+        self.updateCustom()
     
     def delSubItem(self, isResult, name):
         if isResult:
-            del self.map_product[name]
+            del self.recipe_pro[name]
         else:
-            del self.map_material[name]
+            del self.recipe_mat[name]
             
-        self.group.updateGroupInOut()
+        self.updateCustom()
         
     def changeSubItem(self, isResult, before, after):
         if isResult:
-            num = self.map_product[before][0]
-            del self.map_product[before]
-            self.map_product[after] = [num, []]
+            num = self.recipe_pro[before]
+            del self.recipe_pro[before]
+            self.recipe_pro[after] = num
         else:
-            num = self.map_material[before][0]
-            del self.map_material[before]
-            self.map_material[after] = [num, -1]
+            num = self.recipe_mat[before]
+            del self.recipe_mat[before]
+            self.recipe_mat[after] = num
             
-        self.group.updateGroupInOut()
+        self.updateCustom()
         
 class ElemSpecial(ElemFactory):
     def __init__(self, id_self, group, item_factory):

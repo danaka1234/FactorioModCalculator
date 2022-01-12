@@ -1,10 +1,7 @@
 # coding: utf-8
 
 #core
-from PyQt5.QtWidgets    import QTreeWidget, QTreeWidgetItem, QHeaderView 
-#https://doc.qt.io/qtforpython/PySide2/QtWidgets/QTreeWidget.html
-#https://doc.qt.io/qtforpython/PySide2/QtWidgets/QTreeWidgetItem.html
-#https://doc.qt.io/qtforpython/PySide2/QtCore/QAbstractItemModel.html
+from PyQt5.QtWidgets    import QTreeWidget, QTreeWidgetItem, QHeaderView
 
 from PyQt5.QtWidgets    import QGridLayout
 from PyQt5.QtWidgets    import QWidget, QLabel
@@ -65,7 +62,7 @@ class GroupTreeWidget(QTreeWidget):
         else:
             id = int(item.data(column_id, 0))
             elem = elem_manager.map_elem[id]
-            edit_widget.edit_widget.setElem(elem)
+            edit_widget.edit_widget.setElem(elem, bResetInout=True)
         
         global modify_widget
         bEnable = \

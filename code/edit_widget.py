@@ -15,17 +15,6 @@ from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout
 from PyQt5.QtWidgets import QLabel, QLineEdit, QGroupBox
 from PyQt5.QtWidgets import QPushButton, QMessageBox, QDialog, QScrollArea
 from PyQt5.QtGui     import QDoubleValidator, QIntValidator
-#https://www.delftstack.com/tutorial/pyqt5/pyqt-grid-layout/
-#grid layout 셀 합치기
-
-'''
-https://doc.qt.io/qtforpython/PySide2/QtWidgets/QLabel.html
-https://doc.qt.io/qtforpython/PySide2/QtWidgets/QVBoxLayout.html
-https://doc.qt.io/qtforpython/PySide2/QtWidgets/QLayout.html
-
-공백 http://blog.bluekyu.me/2010/08/pyqt-%EB%82%98%EC%95%84%EA%B0%80%EA%B8%B0-5-1.html
-init label_icon image https://pythonspot.com/pyqt5-image/
-'''
 
 import elem_manager, item_manager, common_func, group_tree, option_widget, common_class
 
@@ -121,42 +110,45 @@ class EditWidget(QWidget):
         self.grid_pro = QGridLayout()
         group_material.setLayout(self.grid_mat)
         group_product .setLayout(self.grid_pro)
+        self.map_in = dict()
+        self.map_out = dict()
         
         self.resetInfo()
 
     def set_matearial_product(self):
         if self.elem is None:
-            self.init_grid_item_list([], False)
-            self.init_grid_item_list([], True)
+            self.init_grid_item_list(dict(), False)
+            self.init_grid_item_list(dict(), True)
             return
-        
+            
         list_mat = []
         list_pro = []
-
-        #self.grid_mat
-        for material in self.elem.map_material.items():
-            elem_sub = [material[0], material[1][0]]
-            list_mat.append(elem_sub)
+        for key in self.elem.map_material.keys():
+            list_mat.append(key)
+        for key in self.elem.map_product.keys():
+            list_pro.append(key)
         
-        #self.grid_pro
-        for product in self.elem.map_product.items():
-            elem_sub = [product[0], product[1][0]]
-            list_pro.append(elem_sub)
-
         self.init_grid_item_list(list_mat, False)
         self.init_grid_item_list(list_pro, True)
+        self.update_grid_inout()
         
     def init_grid_item_list(self, list_item, isResult):
-        if not isResult:    grid = self.grid_mat
-        else:               grid = self.grid_pro
+        if not isResult:
+            grid = self.grid_mat
+            map = self.map_in
+        else:
+            grid = self.grid_pro
+            map = self.map_out
             
         # 지우기
-        for i in reversed(range(grid.count())): 
-            grid.itemAt(i).widget().setParent(None)
+        for i in reversed(range(grid.count())):
+            widget = grid.itemAt(i).widget()
+            if widget is not None: widget.deleteLater()
+        map.clear()
                 
         for i in range(len(list_item)):
-            elem = list_item[i]
-            item = item_manager.map_item[elem[0]]
+            name_item = list_item[i]
+            item = item_manager.map_item[name_item]
             iconSize = 32
             
             if type(self.elem) != elem_manager.ElemCustom:
@@ -164,25 +156,34 @@ class EditWidget(QWidget):
                 widget_icon.setPixmap(item.getPixmap(iconSize, iconSize))
                 widget_icon.setToolTip(item.getName())
                 
-                widget_num = QLabel(common_func.getAmountPerTime(elem[1]))
-                
+                widget_num = QLabel('0')
+                map[name_item] = [widget_num]
             else:
                 widget_icon = QPushButton()
                 widget_icon.setFixedSize(32, 32)
                 widget_icon.setIconSize(QSize(32, 32))
                 widget_icon.setIcon(item.getIcon())
                 widget_icon.clicked.connect(\
-                    partial(self.onClickChangeCustom, isResult, elem[0])\
+                    partial(self.onClickChangeCustom, isResult, name_item)\
                 )
                 
-                widget_num = QLineEdit()
-                widget_num.setFixedWidth(60)
-                widget_num.setValidator(QDoubleValidator())
-                widget_num.setText(common_func.getAmountPerTime(elem[1], bTimeStr=False))
-                widget_num.editingFinished.connect(\
-                    partial(self.onEditNumCustom, isResult, elem[0])\
+                label_num = QLabel('0')
+                
+                edit_num = QLineEdit()
+                edit_num.setFixedWidth(50)
+                edit_num.setValidator(QDoubleValidator())
+                edit_num.setText('0')
+                edit_num.editingFinished.connect(\
+                    partial(self.onEditNumCustom, isResult, name_item)\
                 )
                 
+                vbox = QVBoxLayout()
+                vbox.addWidget(label_num)
+                vbox.addWidget(edit_num)
+                widget_num = QWidget()
+                widget_num.setLayout(vbox)
+                map[name_item] = [label_num, edit_num]
+            
             grid.addWidget(widget_icon, i, 0)
             grid.addWidget(widget_num, i, 1)
             
@@ -191,7 +192,7 @@ class EditWidget(QWidget):
             bt_link = QPushButton("L")
             bt_link.setFixedSize(size_button, size_button)
             bt_link.clicked.connect(\
-                partial(self.onClickLink, isResult, elem[0])\
+                partial(self.onClickLink, isResult, name_item)\
             )
             grid.addWidget(bt_link, i, 2)
             
@@ -199,7 +200,7 @@ class EditWidget(QWidget):
                 bt_del = QPushButton("-")
                 bt_del.setFixedSize(size_button, size_button)
                 bt_del.clicked.connect(\
-                    partial(self.onClickDelCustom, isResult, elem[0])\
+                    partial(self.onClickDelCustom, isResult, name_item)\
                 )
                 grid.addWidget(bt_del, i, 3)
         
@@ -211,6 +212,19 @@ class EditWidget(QWidget):
             )
             grid.addWidget(bt_add, len(list_item), 0)
         
+    def update_grid_inout(self):
+        for tuple in self.elem.map_material.items():
+            self.map_in[tuple[0]][0].setText(common_func.getAmountPerTime(tuple[1][0]))
+            if type(self.elem) == elem_manager.ElemCustom:
+                num = self.elem.recipe_mat[tuple[0]]
+                self.map_in[tuple[0]][1].setText(common_func.getAmountRound(num))
+        
+        for tuple in self.elem.map_product.items():
+            self.map_out[tuple[0]][0].setText(common_func.getAmountPerTime(tuple[1][0]))
+            if type(self.elem) == elem_manager.ElemCustom:
+                num = self.elem.recipe_pro[tuple[0]]
+                self.map_out[tuple[0]][1].setText(common_func.getAmountRound(num))
+                
     def setEnabled(self, bEnable):
         if not bEnable:
             self.edit_name.setEnabled(False)
@@ -265,14 +279,17 @@ class EditWidget(QWidget):
         self.grid_module.resetInfo()
         self.setEnabled(False)
         
-    def setElem(self, elem, bUpdateItem = False):
+    def setElem(self, elem, bUpdateItem = False, bResetInout = False):
         self.elem = elem
         
         #공용
         self.edit_name.setText(elem.name)
         self.label_id.setText(str(elem.id))
         self.edit_factories.setText(common_func.getAmountRound(elem.num_factory))
-        self.set_matearial_product()
+        if bResetInout:
+            self.set_matearial_product()
+        else:
+            self.update_grid_inout()
         self.edit_pollution.setText(common_func.getAmountRound(elem.emission))
         
         self.grid_icon.setInfoGridIcon(elem)
@@ -380,8 +397,12 @@ class EditWidget(QWidget):
     def onEditNumCustom(self, isResult, name):
         sender = self.sender()
         num = common_func.getNumFromText(sender.text())
-        self.elem.changeNum(isResult, name, num)
+        self.elem.editSubNum(isResult, name, num)
         group_tree.tree_widget.updateItem(self.elem)
+        num_factory = self.elem.num_factory
+        if isResult:    label_num = self.map_out[name][0]
+        else:           label_num = self.map_in [name][0]
+        label_num.setText(common_func.getAmountPerTime(num * num_factory))
 
 class GridIcon(QVBoxLayout):
     def __init__(self):
@@ -462,7 +483,7 @@ class GridIcon(QVBoxLayout):
         if ret == 1:
             item = item_manager.map_item[dlg.selected]
             edit_widget.elem.changeItem(item)
-            edit_widget.setElem(edit_widget.elem, True)
+            edit_widget.setElem(edit_widget.elem, bUpdateItem=True, bResetInout=True)
         
     def onClickRecipe(self):
         global edit_widget
@@ -485,7 +506,7 @@ class GridIcon(QVBoxLayout):
                 return
             recipe = item_manager.map_recipe[dlg.selected]
             edit_widget.elem.changeRecipe(recipe)
-            edit_widget.setElem(edit_widget.elem, True)
+            edit_widget.setElem(edit_widget.elem, bUpdateItem=True, bResetInout=True)
         
     def onClickFactory(self):
         global edit_widget
@@ -565,8 +586,7 @@ class GridModule(QGridLayout):
         self.list_bt.clear()
         for i in reversed(range(self.grid_btn.count())): 
             widget = self.grid_btn.itemAt(i).widget()
-            widget.deleteLater()
-            #widget.setParent(None)
+            if widget is not None: widget.deleteLater()
             
     def updateGridModule(self):
         global edit_widget
@@ -639,7 +659,7 @@ class GridModule(QGridLayout):
                 if bt.module != None:
                     list_module.append(bt.module)
             elem.changeModule(list_module)
-            edit_widget.setElem(elem)
+            edit_widget.setElem(elem, bResetInout=True)
             group_tree.tree_widget.updateItem(elem)
 
 # 현재 링크 상태 보여줌
@@ -681,7 +701,7 @@ class LinkPopup(QDialog):
     def drawGrid(self):
         for i in reversed(range(self.grid.count())): 
             widget = self.grid.itemAt(i).widget()
-            widget.deleteLater()
+            if widget is not None: widget.deleteLater()
             
         item = item_manager.map_item[self.name_item]
         iconSize = 32

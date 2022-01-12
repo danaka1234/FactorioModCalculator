@@ -19,7 +19,7 @@ option_widget = None
 #for project option
 # --- global
 expensive = False
-time_config = 1
+time_config = 0
 min_ignore = 0.0001
 mine_product = 0
 # --- tree

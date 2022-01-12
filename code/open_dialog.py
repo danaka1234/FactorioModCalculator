@@ -6,7 +6,6 @@ import PyQt5
 #core
 from PyQt5.QtCore       import Qt
 from PyQt5.QtWidgets    import QApplication, QWidget, QDialog
-#https://doc.qt.io/qtforpython/PySide2/QtWidgets/QDialog.html
 
 #layout
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QVBoxLayout
@@ -14,11 +13,9 @@ from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QVBoxLayout
 #widget
 from PyQt5.QtWidgets import QLabel, QCheckBox, QLineEdit, QPushButton
 from PyQt5.QtWidgets import QScrollArea, QGroupBox, QRadioButton
-#https://wikidocs.net/35486 radio button
 
 import config_manager, item_manager
 
-#https://doc.qt.io/qtforpython/PySide2/QtWidgets/QDialog.html
 class OpenDialog(QDialog):
     def __init__(self, parent = None):
         super().__init__(parent)
@@ -140,7 +137,9 @@ class OpenDialog(QDialog):
         config_manager.path_base = self.edit_factorio.text()
         
         for i in reversed(range(vbox_mods.count())): 
-            vbox_mods.itemAt(i).widget().setParent(None)
+            widget = vbox_mods.itemAt(i).widget()
+            if widget is not None: widget.deleteLater()
+            
         
         if len(list_mods_all) == 0:
             vbox_mods.addWidget(QLabel('There\'s no Mod File'))
@@ -198,7 +197,8 @@ class OpenDialog(QDialog):
         vbox_mods = self.vbox_mods
         if not os.path.isdir(config_manager.path_factorio):
             for i in reversed(range(vbox_mods.count())): 
-                vbox_mods.itemAt(i).widget().setParent(None)
+                widget = vbox_mods.itemAt(i).widget()
+                if widget is not None: widget.deleteLater()
             vbox_mods.addWidget(QLabel('Invalid factorio directory'))
             return False
         list_check = self.list_check
