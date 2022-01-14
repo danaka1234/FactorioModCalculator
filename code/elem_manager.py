@@ -446,11 +446,17 @@ class ElemGroup(Elem):
     def deleteElem(self):
         if self.group is None:
             return
+        
+        list_child_id = []
+        for child in self.list_child:
+            list_child_id.append(child.id)
+            
+        global map_elem
+        for id in list_child_id:
+            child = map_elem[id]
+            child.deleteElem()
             
         super().deleteElem()
-        
-        for child in self.list_child:
-            child.deleteElem()
     
     def changeItem(self, item):
         self.item_goal = item
@@ -788,14 +794,18 @@ def load_elem():
     if map is None:
         return
     
-    version = map['version']
+    version = map.get('version')
+    if version is None:
+        version = common_func.version_current
     # TODO : 버전별 작업하기
     if version != common_func.version_current:
         if loading_widget.load_widget is not None:
             loading_widget.load_widget.setMsg('Factories version is not same', True)
         return
         
-    map_e = map['factory']
+    map_e = map.get('factory')
+    if map_e is None:
+        map_e = dict()
     
     # json에서 key는 무조건 string
     # https://stackoverflow.com/questions/1450957/pythons-json-module-converts-int-dictionary-keys-to-strings

@@ -103,7 +103,7 @@ class GroupTreeWidget(QTreeWidget):
         self.resizeAll()
         
         if keep_sel:
-            edit_widget.edit_widget.setElem(elem_before)
+            edit_widget.edit_widget.setElem(elem_before, bResetInout=True)
         
     def updateItem(self, elem, bUpdateGroup = True):
         item_group = self.topLevelItem(0)

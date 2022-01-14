@@ -281,6 +281,8 @@ class EditWidget(QWidget):
         
     def setElem(self, elem, bUpdateItem = False, bResetInout = False):
         self.elem = elem
+        if elem is None:
+            return
         
         #공용
         self.edit_name.setText(elem.name)
@@ -317,8 +319,6 @@ class EditWidget(QWidget):
                 self.edit_fuel.setText(common_func.getAmountRound(elem.energy_elect))
             
         if bUpdateItem:
-            # TODO : 링크 있으면 링크 업뎃...
-            
             # 아이템 업뎃
             group_tree.tree_widget.updateItem(elem)
             
@@ -725,7 +725,7 @@ class LinkPopup(QDialog):
                 list_link = [id_link]
         
         for id_link in list_link:
-            self.addLink(row, id_link)
+            self.addLinkList(row, id_link)
             row += 1
         
         size_button = 32
@@ -737,7 +737,7 @@ class LinkPopup(QDialog):
         
         self.grid.setRowStretch(row, 1)
                 
-    def addLink(self, y, id_elem):
+    def addLinkList(self, y, id_elem):
         elem = elem_manager.map_elem[id_elem]
         item = self.item_goal
         
@@ -822,7 +822,7 @@ class LinkAddPopup(QDialog):
         # draw elem
         row = 0
         for elem in list_elem:
-            self.addLink(row, elem)
+            self.addLinkNew(row, elem)
             row += 1
         
         # draw add
@@ -833,7 +833,7 @@ class LinkAddPopup(QDialog):
         
         self.grid.setRowStretch(row, 1)
         
-    def addLink(self, y, elem):
+    def addLinkNew(self, y, elem):
         item = elem.item_goal
         iconSize = 32
         bt_item = QPushButton()
