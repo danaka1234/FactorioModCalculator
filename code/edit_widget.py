@@ -239,12 +239,18 @@ class EditWidget(QWidget):
             
         #공용
         self.edit_name.setEnabled(True)
-        self.edit_factories.setEnabled(True)
+        if self.elem.haveLink(is_result=True):
+            self.edit_factories.setEnabled(False)
+        else:
+            self.edit_factories.setEnabled(True)
         self.grid_icon.setEnabled(True)
         
         # Enable > Disable 하면 포커스가 옮겨져서 귀찮다... 각자 설정
         if type(self.elem) in [elem_manager.ElemFactory, elem_manager.ElemSpecial]:
-            self.edit_goal.setEnabled(True)
+            if self.elem.haveLink(is_result=True):
+                self.edit_goal.setEnabled(False)
+            else:
+                self.edit_goal.setEnabled(True)
             self.edit_beacon.setEnabled(True)
             self.edit_power.setEnabled(False)
             self.edit_fuel.setEnabled(False)
@@ -739,13 +745,13 @@ class LinkPopup(QDialog):
                 
     def addLinkList(self, y, id_elem):
         elem = elem_manager.map_elem[id_elem]
-        item = self.item_goal
+        item = elem.item_goal
         
         iconSize = 32
         label_item = QLabel()
         label_item.setPixmap(item.getPixmap(iconSize, iconSize))
         
-        label_text = QLabel('ID:' + str(elem.id) + '\n' + elem.name)
+        label_text = QLabel(elem.name + '\nID:' + str(elem.id))
         
         size_button = 20
         bt_del = QPushButton("-")
@@ -759,14 +765,47 @@ class LinkPopup(QDialog):
         self.grid.addWidget(bt_del, y, 2)
         
     def onClickDel(self, id_elem):
-        print('del')
+        global edit_widget
+        elem = edit_widget.elem
+        if self.is_result:  # elem이 producer
+            consumer = elem_manager.map_elem[id_elem]
+            consumer.delLink(self.name_item, elem.id)
+        else:               # elem이 consumer
+            producer = elem_manager.map_elem[id_elem]
+            elem.delLink(self.name_item, producer.id)
+        self.drawGrid()
+        edit_widget.setElem(edit_widget.elem, bUpdateItem=True)
         
     def onClickAdd(self):
+        global edit_widget
         dlg = LinkAddPopup(self.name_item, self.is_result)
         ret = dlg.exec_()
         if ret == 1:
-            pass
-        pass
+            id = dlg.selected
+            if id is None:  # 새로 추가하기
+                item = item_manager.map_item[self.name_item]
+                if self.is_result:  # product Link, 불가능
+                    return
+                else:               # material Link, 호출 elem이 consumer
+                    name_recipe = item.list_madeby[0]
+                    recipe = item_manager.map_recipe[name_recipe]
+                    name_goal = recipe.getListMaterial()[0][0]
+                    item_goal = item_manager.map_item[name_goal]
+                elem = elem_manager.ElemFactory(\
+                    None, edit_widget.elem.group, item_goal)
+                elem.changeRecipe(recipe)
+            else:           # 기존 elem
+                elem = elem_manager.map_elem[id]
+            # 연결
+            if self.is_result:
+                elem.addLink(self.name_item, edit_widget.elem.id)
+            else:
+                edit_widget.elem.addLink(self.name_item, elem.id)
+                
+            self.drawGrid()
+            edit_widget.setElem(edit_widget.elem, bUpdateItem=True)
+            if id is None:  # 새로 추가하기
+                group_tree.tree_widget.rebuildTree(keep_sel = True)
 
 # 기존 링크 + 새로 추가할 버튼 보여줌
 class LinkAddPopup(QDialog):
@@ -807,17 +846,22 @@ class LinkAddPopup(QDialog):
         group = group_tree.tree_widget.elem_group
         
         # find elem
+        global edit_widget
         list_elem = []
         for elem in group.list_child:
             if self.is_result:  map = elem.map_material
             else:               map = elem.map_product
             
-            for name_item in map.keys():
-                if self.name_item == name_item:
-                    # 입력은 하나만
-                    if self.is_result and map[name_item][1] != -1:
+            if self.name_item in map.keys():
+                # 이미 연결된거 제외
+                if self.is_result:
+                    if map[self.name_item][1] == edit_widget.elem.id:
                         continue
-                    list_elem.append(elem)
+                else:
+                    if edit_widget.elem.id in map[self.name_item][1]:
+                        continue
+                
+                list_elem.append(elem)
         
         # draw elem
         row = 0
@@ -826,10 +870,11 @@ class LinkAddPopup(QDialog):
             row += 1
         
         # draw add
-        bt_add = QPushButton("New Factory")
-        bt_add.clicked.connect(self.onClickAdd)
-        self.grid.addWidget(bt_add, row, 0, 1, 2)
-        row += 1
+        if not self.is_result:  # 재료만 넣자...
+            bt_add = QPushButton("New Factory")
+            bt_add.clicked.connect(self.onClickAdd)
+            self.grid.addWidget(bt_add, row, 0, 1, 2)
+            row += 1
         
         self.grid.setRowStretch(row, 1)
         
@@ -840,6 +885,7 @@ class LinkAddPopup(QDialog):
         bt_item.setFixedSize(iconSize, iconSize)
         bt_item.setIconSize(QSize(iconSize, iconSize))
         bt_item.setIcon(item.getIcon())
+        bt_item.id_elem = elem.id
         bt_item.clicked.connect(\
             partial(self.onClickSelect, elem.id)\
         )
@@ -850,9 +896,12 @@ class LinkAddPopup(QDialog):
         self.grid.addWidget(label_text, y, 1)
         
     def onClickSelect(self, id_elem):
-        pass
+        bt = self.sender()
+        self.selected = bt.id_elem
+        self.accept()
         
     def onClickAdd(self):
-        pass
+        self.selected = None
+        self.accept()
 
 # --------------------------- debug

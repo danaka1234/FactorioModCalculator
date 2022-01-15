@@ -5,7 +5,7 @@ import random
 import queue
 
 import item_manager, common_func, option_widget, loading_widget
-import json_manager, config_manager, item_manager
+import json_manager, config_manager, item_manager, log_manager
 
 map_elem = dict()
 id_max = 10000
@@ -116,12 +116,162 @@ class Elem:
         if self.group is None:
             return
         self.group.list_child.remove(self)
+        self.delLinkAll()
         delElemId(self.id)
         self.group.updateGroupInOut()
         
     def changeFacNum(self, num_factory):
         self.num_factory = num_factory
     
+    # 소비자(consumer)가 호출
+    def addLink(self, name_item, id_producer):
+        # 소비자 > 생산자 순으로 호출
+        tuple = self.map_material.get(name_item)
+        if tuple is None:
+            log_manager.write_log('addLink : item not exist '+ str(self.id) + ', ' + name_item)
+            return False
+
+        if tuple[1] == id_producer: # 이미 들어있으면 실패
+            log_manager.write_log('addLink : Already linked '+ str(id_producer) + ', ' + str(self.id))
+            return False
+
+        if tuple[1] != -1:  # 기존 링크 연결끊기
+            self.delLink(name_item, tuple[1])
+            
+        global map_elem
+        elem = map_elem[id_producer]
+        ret = elem.addLinkSub(name_item, self.id)
+        if ret:
+            tuple[1] = id_producer
+        return ret
+        
+    # 생산자(producer)가 호출
+    def addLinkSub(self, name_item, id_consumer):
+        tuple = self.map_product.get(name_item)
+        if tuple is None:
+            log_manager.write_log('addLinkSub : item not exist '+ str(self.id) + ', ' + name_item)
+            return False
+            
+        list_id = tuple[1]
+        if id_consumer in list_id:  # 이미 들어있으면 실패
+            log_manager.write_log('addLinkSub : Already linked '+ str(self.id) + ', ' + str(id_consumer))
+            return False
+            
+        list_id.append(id_consumer)
+        # fac_num 변경
+        return self.updateFacNumByLink()
+        
+    # 소비자(consumer)가 호출
+    def delLink(self, name_item, id_producer):
+        # 소비자 > 생산자 순으로 호출
+        global map_elem
+        tuple = self.map_material.get(name_item)
+        if tuple is None:
+            log_manager.write_log('delLink : item not exist '+ str(self.id) + ', ' + name_item)
+            return False
+            
+        if tuple[1] != id_producer: # 동일하지 않으면 실패
+            log_manager.write_log('delLink : not linked '+ str(id_producer) + ', ' + str(id_consumer))
+            return False
+        
+        global map_elem
+        elem = map_elem[id_producer]
+        ret = elem.delLinkSub(name_item, self.id)
+        if ret:
+            tuple[1] = -1
+        return ret
+        
+    # 생산자(producer)가 호출
+    def delLinkSub(self, name_item, id_consumer):
+        tuple = self.map_product.get(name_item)
+        if tuple is None:
+            log_manager.write_log('delLinkSub : item not exist '+ str(self.id) + ', ' + name_item)
+            return False
+            
+        list_id = tuple[1]
+        if id_consumer not in list_id:  # 안 들어있으면 실패
+            log_manager.write_log('delLinkSub : not linked '+ str(self.id) + ', ' + str(id_consumer))
+            return False
+        
+        list_id.remove(id_consumer)
+        # fac_num 변경
+        return self.updateFacNumByLink()
+    
+    def delLinkAll(self):
+        self.delLinkMatAll()
+        self.delLinkProAll()
+        
+    def delLinkMatAll(self):
+        for tuple in self.map_material.items():
+            name_item = tuple[0]
+            id_link = tuple[1][1]
+            if id_link != -1:
+                self.delLink(name_item, id_link)
+        
+    def delLinkProAll(self):
+        global map_elem
+        for tuple in self.map_product.items():
+            name_item = tuple[0]
+            list_id = tuple[1][1]
+            for id in list_id:
+                elem = map_elem[id]
+                elem.delLink(name_item, self.id)
+            
+    def haveLink(self, is_result):
+        if is_result:
+            for tuple in self.map_product.items():
+                if len(tuple[1][1]) != 0:
+                    return True
+        else:
+            for tuple in self.map_material.items():
+                if tuple[1][1] != -1:
+                    return True
+        return False
+            
+    def updateFacNumByLink(self):
+        global map_elem
+        
+        num_fac_max = 0     # 필요한 값 중 가장 큰 값
+        name_max = ''
+        for tuple in self.map_product.items():
+            # tuple = [ name_item, [ num_cur, [list_id] ] ]
+            num_sum = 0
+            name_item = tuple[0]
+            num_cur = tuple[1][0]
+            list_id = tuple[1][1]
+            for id in list_id:
+                elem = map_elem[id]
+                tuple2 = elem.map_material.get(name_item)
+                # tuple2 = [ num, id_link ]
+                if tuple is None:
+                    log_manager.write_log('updateFacNumByLink : Not Linked '\
+                        + str(self.id) + ', ' + str(id)\
+                        + ', item : ' + name_item)
+                    return False
+                num_sum += tuple2[0]
+                
+            num_recipe = self.getItemPerRecipe(name_item)
+            num_factory = num_sum/num_recipe
+            if num_fac_max < num_factory:
+                num_fac_max = num_factory
+                name_max = name_item
+            
+            if num_cur != num_sum:
+                # 업데이트 되는건 뭔가 처리가 필요한가?
+                tuple[1][0] = num_sum
+                
+        if name_max == '' : # 링크가 하나도 없는 경우 그냥 리턴
+            return True
+                
+        if type(self) == ElemFactory:
+            # 팩토리는 생산성을 고려해야 한다...
+            num_recipe = self.getItemPerRecipe(name_item)
+            num_goal = num_fac_max * num_recipe
+            self.changeGoal(num_goal)
+        else:
+            self.changeFacNum( num_fac_max )
+        return True
+        
 class ElemFactory(Elem):
     def __init__(self, id_self, group, item_goal):
         super().__init__(id_self, group)
@@ -270,6 +420,7 @@ class ElemFactory(Elem):
         if self.num_factory == num_factory: return
         self.num_factory = num_factory
         self.bFacNumBase = True
+        
         self.updateElem()
         
     def changeBeaconNum(self, num_beacon):
@@ -285,11 +436,8 @@ class ElemFactory(Elem):
         num_goal = self.num_goal
             
         # 생산 = 레시피 당 생산 * 모듈 보너스
-        num_recipe = 1  # 레시피 1회당 생산
-        for output in self.recipe.getListProduct():
-            if output[0] == self.item_goal.name:
-                num_recipe = output[1]
-                break
+        # 레시피 1회당 생산
+        num_recipe = self.getItemPerRecipe(self.item_goal.name)
                 
         production = num_recipe * ( 1 + self.productivity )
                 
@@ -366,11 +514,9 @@ class ElemFactory(Elem):
         
     def updateInOut(self):
         #global map_elem
-        num_recipe = 1
-        for output in self.recipe.getListProduct():
-            if output[0] == self.item_goal.name:
-                num_recipe = output[1]
-                break
+        # 레시피 1회당 생산
+        num_recipe = self.getItemPerRecipe(self.item_goal.name)
+        
         #(초당)생산회수 = 목표 / 레시피 생산
         ratio = self.num_goal / num_recipe
         
@@ -426,21 +572,37 @@ class ElemFactory(Elem):
                     
         self.consumption = max(-0.8, self.consumption)
         
+    def getItemPerRecipe(self, name_item, isResult = True):
+        if isResult:    list_item = self.recipe.getListProduct()
+        else:           list_item = self.recipe.getListMaterial()
+        for tuple in list_item:
+            if tuple[0] == name_item:
+                return tuple[1]
+        return -1
+        
 class ElemGroup(Elem):
     def __init__(self, id_self, group):
         super().__init__(id_self, group)
+        self.recipe_mat = {}
+        self.recipe_pro = {}
+        self.list_etc = [0, 0, 0]   #emission, elect, fuel
         self.list_child = []
         
     def toMap(self):
         map = super().toMap()
         map['_type'] = 'group'
-        map['energy_fuel'] = self.energy_fuel
+        map['recipe_mat'] = self.recipe_mat
+        map['recipe_pro'] = self.recipe_pro
+        map['list_etc'] = self.list_etc
         
         return map
         
     def fromMap(map):
         id = map['id']
         e = ElemGroup(id, None)
+        e.recipe_mat = map['recipe_mat']
+        e.recipe_pro = map['recipe_pro']
+        e.list_etc = map['list_etc']
         return e
     
     def deleteElem(self):
@@ -466,64 +628,103 @@ class ElemGroup(Elem):
     def changeFacNum(self, num_factory):
         if self.num_factory == num_factory: return
         self.num_factory = num_factory
-        self.updateGroupInOut()
+        self.multiplyNum()
         
-    def updateGroupInOut(self):
-        map_all = {}
-        
-        self.emission = 0
-        self.energy_elect = 0
-        self.energy_fuel = 0
-        
-        for child in self.list_child:
-            for name_material in child.map_material.keys():
-                material = child.map_material[name_material]
-                if map_all.get(name_material) is None:
-                    map_all[name_material] = 0
-                map_all[name_material] = map_all[name_material] - material[0]
-
-            for name_product in child.map_product:
-                product = child.map_product[name_product]
-                if map_all.get(name_product) is None:
-                    map_all[name_product] = 0
-                map_all[name_product] = map_all[name_product] + product[0]
-                
-            if type(child) in [ElemFactory, ElemSpecial]:
-                if child.factory is not None:
-                    if child.factory.energy_source_type == 'electric':
-                        self.energy_elect   += child.energy_elect
-                    else:
-                        self.energy_fuel    += child.energy_fuel
-            else:
-                self.energy_elect   += child.energy_elect
-                self.energy_fuel    += child.energy_fuel
-                
-            self.emission   = self.emission + child.emission
-        self.emission       *= self.num_factory
-        self.energy_elect   *= self.num_factory
-        self.energy_fuel    *= self.num_factory
-                
-        #원래는 따로 만들고 업데이트 해야함
-        self.map_product = {}
-        self.map_material = {}
-        for name in map_all:
-            num = map_all[name] * self.num_factory
+    def multiplyNum(self):   # 리셋 처리 및 단순 곱셈
+        for tuple in self.recipe_mat.items():
+            name = tuple[0]
+            num = tuple[1]
+            if self.map_material.get(name) is None: # 없으면 추가
+                self.map_material[name] = [0, -1]
             if abs(num) < option_widget.min_ignore:
                 continue
-            elif num > 0: #생산
-                self.map_product[name] = [num, []]
-            elif num < 0: #소비
-                num = -num
-                self.map_material[name] = [num, -1]
-            else:
+            self.map_material[name][0] = num * self.num_factory
+            
+        for tuple in self.recipe_pro.items():
+            name = tuple[0]
+            num = tuple[1]
+            if self.map_product.get(name) is None: # 없으면 추가
+                self.map_product[name] = [0, []]
+            if abs(num) < option_widget.min_ignore:
                 continue
+            self.map_product[name][0] = num * self.num_factory
+            
+        # 삭제 과정
+        list_key = list(self.map_material.keys())
+        for key in list_key:
+            if key not in self.recipe_mat:
+                tuple = self.map_material.pop(key)
+                #TODO : 링크 삭제
                 
+        list_key = list(self.map_product.keys())
+        for key in list_key:
+            if key not in self.recipe_pro:
+                tuple = self.map_product.pop(key)
+                #TODO : 링크 삭제
+            
+        self.emission       = self.list_etc[0] * self.num_factory
+        self.energy_elect   = self.list_etc[1] * self.num_factory
+        self.energy_fuel    = self.list_etc[2] * self.num_factory
+        
         if self.group is not None:
             self.group.updateGroupInOut()
             
         global factories_changed
         factories_changed = True
             
+    def updateGroupInOut(self):
+        # 호출전 링크 변경 필요
+        map_all = {}
+        self.list_etc = [0, 0, 0]
+        
+        for child in self.list_child:
+            for name_material in child.map_material.keys():
+                material = child.map_material[name_material]
+                if map_all.get(name_material) is None:
+                    map_all[name_material] = 0
+                map_all[name_material] -= material[0]
+
+            for name_product in child.map_product:
+                product = child.map_product[name_product]
+                if map_all.get(name_product) is None:
+                    map_all[name_product] = 0
+                map_all[name_product] += product[0]
+                
+            if type(child) in [ElemFactory, ElemSpecial]:
+                if child.factory is not None:
+                    if child.factory.energy_source_type == 'electric':
+                        self.list_etc[1]    += child.energy_elect
+                    else:
+                        self.list_etc[2]    += child.energy_fuel
+            else:   # ElemGroup, ElemCustom
+                self.list_etc[1]    += child.energy_elect
+                self.list_etc[2]    += child.energy_fuel
+                
+            self.list_etc[0]        += child.emission
+            
+        self.recipe_pro = dict()
+        self.recipe_mat = dict()
+            
+        for name in map_all:
+            num = map_all[name] * self.num_factory
+            if abs(num) < option_widget.min_ignore:
+                continue    # 삭제 필요할까
+            elif num > 0:   #생산
+                self.recipe_pro[name] = num
+            elif num < 0:   #소비
+                num = -num
+                self.recipe_mat[name] = num
+                
+        self.multiplyNum()
+            
+    def getItemPerRecipe(self, name_item, isResult = True):
+        if isResult:    map = self.recipe_pro
+        else:           map = self.recipe_mat
+            
+        if map.get(name_item) is not None:
+            return map[name_item]
+        return -1
+        
 class ElemCustom(Elem):
     def __init__(self, id_self, group):
         super().__init__(id_self, group)
@@ -617,6 +818,9 @@ class ElemCustom(Elem):
             
         self.updateCustom()
         
+    def getItemPerRecipe(self, name_item, isResult = True):
+        return ElemGroup.getItemPerRecipe(self, name_item, isResult)
+        
 class ElemSpecial(ElemFactory):
     def __init__(self, id_self, group, item_factory):
         super().__init__(id_self, group, None)
@@ -680,19 +884,9 @@ class ElemSpecial(ElemFactory):
         num_factory = self.num_factory
         num_goal = self.num_goal
         
-        # result
-        result = []
-        for elem in self.factory.list_result:
-            if elem[1] == self.item_goal.name:
-                result = elem
-                
         # 생산 = 레시피 당 생산 * 모듈 보너스
-        num_recipe = result[2]  # 레시피 1회당 생산
-        for output in self.recipe.getListProduct():
-            if output[0] == self.item_goal.name:
-                num_recipe = output[1]
-                break
-                
+        # 레시피 1회당 생산
+        num_recipe = self.getItemPerRecipe(self.item_goal.name)
         production = num_recipe
                 
         # 1개당 속도 = 공장 속도 * 모듈 속도
@@ -757,6 +951,18 @@ class ElemSpecial(ElemFactory):
                 num_material = self.recipe.getMaterialNumByName(key) * num_part
             material[0] = num_material * ratio / bonus
             
+    def getItemPerRecipe(self, name_item, isResult = True):
+        if isResult:
+            for elem in self.factory.list_result:
+                if elem[1] == name_item:
+                    return elem[2]  
+        else:
+            list_item = self.recipe.getListMaterial()
+            for tuple in list_item:
+                if tuple[0] == name_item:
+                    return tuple[1]
+        return -1
+        
 def resourceChanged():
     global map_elem
     for elem in map_elem.values():
