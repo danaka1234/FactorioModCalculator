@@ -379,11 +379,7 @@ class EditWidget(QWidget):
     def onClickLink(self, isResult, name):
         dlg = LinkPopup(name, isResult)
         ret = dlg.exec_()
-        if ret == 1:
-        # TODO : 링크 추가
-            print(dlg.selected)
-            return
-        pass
+        # 작업은 LinkPopup 에서 다 한다...
     
     def onClickDelCustom(self, isResult, name):
         self.elem.delSubItem(isResult, name)
@@ -789,7 +785,7 @@ class LinkPopup(QDialog):
                 else:               # material Link, 호출 elem이 consumer
                     name_recipe = item.list_madeby[0]
                     recipe = item_manager.map_recipe[name_recipe]
-                    name_goal = recipe.getListMaterial()[0][0]
+                    name_goal = recipe.getListProduct()[0][0]
                     item_goal = item_manager.map_item[name_goal]
                 elem = elem_manager.ElemFactory(\
                     None, edit_widget.elem.group, item_goal)

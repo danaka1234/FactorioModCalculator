@@ -228,7 +228,7 @@ class Elem:
                     return True
         return False
             
-    def updateFacNumByLink(self):
+    def updateFacNumByLink(self, bUpdate=True):
         global map_elem
         
         num_fac_max = 0     # 필요한 값 중 가장 큰 값
@@ -261,15 +261,16 @@ class Elem:
                 tuple[1][0] = num_sum
                 
         if name_max == '' : # 링크가 하나도 없는 경우 그냥 리턴
+            self.updateElem()
             return True
                 
         if type(self) == ElemFactory:
             # 팩토리는 생산성을 고려해야 한다...
             num_recipe = self.getItemPerRecipe(name_item)
             num_goal = num_fac_max * num_recipe
-            self.changeGoal(num_goal)
+            self.changeGoal(num_goal, bUpdate)
         else:
-            self.changeFacNum( num_fac_max )
+            self.changeFacNum( num_fac_max, bUpdate )
         return True
         
 class ElemFactory(Elem):
@@ -392,13 +393,13 @@ class ElemFactory(Elem):
         self.list_module = []
         if bUpdate:
             self.resetInOut()
-            self.updateElem(module=True)
+            self.updateElem(module=True, bUpdateGroup=True)
         
-    def changeGoal(self, num_goal):
+    def changeGoal(self, num_goal, bUpdate=True):
         if self.num_goal == num_goal: return
         self.bFacNumBase = False
         self.num_goal = num_goal
-        self.updateElem()
+        self.updateElem(bUpdateGroup=bUpdate)
       
     def changeFactory(self, factory, bUpdate=True):
         if factory is None:
@@ -413,15 +414,13 @@ class ElemFactory(Elem):
             self.num_module = factory.module_slots
         self.factory = factory
         
-        if bUpdate:
-            self.updateElem()
+        self.updateElem(bUpdateGroup=bUpdate)
         
-    def changeFacNum(self, num_factory):
+    def changeFacNum(self, num_factory, bUpdate=True):
         if self.num_factory == num_factory: return
         self.num_factory = num_factory
         self.bFacNumBase = True
-        
-        self.updateElem()
+        self.updateElem(bUpdateGroup=bUpdate)
         
     def changeBeaconNum(self, num_beacon):
         self.beacon = num_beacon
@@ -486,7 +485,7 @@ class ElemFactory(Elem):
         for input in self.recipe.getListMaterial():
             self.map_material[input[0]] = [0, -1]
         
-    def updateElem(self, module = False):
+    def updateElem(self, module = False, bUpdateGroup = True):
         if module:
             self.updateModule()
             
@@ -507,7 +506,16 @@ class ElemFactory(Elem):
             else:
                 self.energy_fuel = energy
                 
-        self.group.updateGroupInOut()
+        # Link 업뎃
+        for tuple in self.map_material.items():
+            if tuple[1][1] == -1:
+                continue
+            global map_elem
+            elem = map_elem[tuple[1][1]]
+            elem.updateFacNumByLink(bUpdate=False)
+            
+        if bUpdateGroup:
+            self.group.updateGroupInOut()
             
         global factories_changed
         factories_changed = True
@@ -578,6 +586,9 @@ class ElemFactory(Elem):
         for tuple in list_item:
             if tuple[0] == name_item:
                 return tuple[1]
+        log_manager.write_log('getItemPerRecipe : cannot find '\
+                + str(self.id) + ', ' + name_item\
+                + ', ' + str(isResult) )
         return -1
         
 class ElemGroup(Elem):
@@ -654,13 +665,17 @@ class ElemGroup(Elem):
         for key in list_key:
             if key not in self.recipe_mat:
                 tuple = self.map_material.pop(key)
-                #TODO : 링크 삭제
+                if tuple[1] != -1:
+                    self.delLink(key, tuple[1])
                 
         list_key = list(self.map_product.keys())
         for key in list_key:
             if key not in self.recipe_pro:
                 tuple = self.map_product.pop(key)
-                #TODO : 링크 삭제
+                for id in tuple[1]:
+                    global map_elem
+                    elem = map_elem[i]
+                    elem.delLink(key, self.id)
             
         self.emission       = self.list_etc[0] * self.num_factory
         self.energy_elect   = self.list_etc[1] * self.num_factory
