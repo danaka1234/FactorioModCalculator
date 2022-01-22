@@ -89,6 +89,7 @@ class GroupTreeWidget(QTreeWidget):
     def rebuildTree(self, keep_sel = False):
         if keep_sel:
             elem_before = edit_widget.edit_widget.elem
+            selected = None
         self.clear()
         item_group = ElemTreeItem(self, self.elem_group, None)
         
@@ -97,13 +98,18 @@ class GroupTreeWidget(QTreeWidget):
             
         # 정렬 : 그냥 child 순위
         for elem in self.elem_group.list_child:
-            ElemTreeItem(self, elem, item_group)
+            item = ElemTreeItem(self, elem, item_group)
+            if keep_sel and elem == elem_before:
+                selected = item
             
-        self.expandAll ()
+        self.expandAll()
         self.resizeAll()
         
-        if keep_sel:
+        if keep_sel and selected is not None:
             edit_widget.edit_widget.setElem(elem_before, bResetInout=True)
+            self.currentItemChanged.disconnect()
+            self.setCurrentItem(selected)
+            self.currentItemChanged.connect(self.onItemChanged)
         
     def updateItem(self, elem, bUpdateGroup = True):
         item_group = self.topLevelItem(0)

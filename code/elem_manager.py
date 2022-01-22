@@ -414,7 +414,8 @@ class ElemFactory(Elem):
             self.num_module = factory.module_slots
         self.factory = factory
         
-        self.updateElem(bUpdateGroup=bUpdate)
+        if bUpdate:
+            self.updateElem(bUpdateGroup=bUpdate)
         
     def changeFacNum(self, num_factory, bUpdate=True):
         if self.num_factory == num_factory: return
@@ -846,8 +847,8 @@ class ElemSpecial(ElemFactory):
             name_recipe = item_factory.fixed_recipe
             self.recipe = item_manager.map_recipe[name_recipe]
             name_result = item_factory.list_result[0][1]
-            self.changeFactory(item_factory, bUpdate=False)
             self.changeItem(item_manager.map_item[name_result])
+            self.changeFactory(item_factory, bUpdate=False)
             
     def toMap(self):
         map = super().toMap()

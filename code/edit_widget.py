@@ -98,11 +98,23 @@ class EditWidget(QWidget):
         grid_info.addWidget(self.edit_fuel      , 7, 1)
         grid_info.addWidget(self.edit_pollution , 8, 1)
         
+        bt_up = QPushButton('Up')
+        bt_up.clicked.connect(\
+            partial(self.onClickUpDouwn, False)\
+            )
+        grid_info.addWidget(bt_up               , 9, 0)
+        bt_down = QPushButton('Down')
+        bt_down.clicked.connect(\
+            partial(self.onClickUpDouwn, True)\
+            )
+        grid_info.addWidget(bt_down             , 9, 1)
+            
+        
         bt_delete = QPushButton('Delete')
         bt_delete.clicked.connect(self.onClickDelete)
-        grid_info.addWidget(bt_delete           , 9, 1)
+        grid_info.addWidget(bt_delete           , 10, 1)
         
-        grid_info.setRowStretch(7, 1)
+        grid_info.setRowStretch(11, 1)
         grid_info.setColumnStretch(2, 1)
         
         #------------------------- group material product
@@ -379,7 +391,6 @@ class EditWidget(QWidget):
     def onClickLink(self, isResult, name):
         dlg = LinkPopup(name, isResult)
         ret = dlg.exec_()
-        # 작업은 LinkPopup 에서 다 한다...
     
     def onClickDelCustom(self, isResult, name):
         self.elem.delSubItem(isResult, name)
@@ -405,6 +416,31 @@ class EditWidget(QWidget):
         if isResult:    label_num = self.map_out[name][0]
         else:           label_num = self.map_in [name][0]
         label_num.setText(common_func.getAmountPerTime(num * num_factory))
+
+    def onClickUpDouwn(self, bDown):
+        elem = self.elem
+        list_child = elem.group.list_child
+        try:
+            index = list_child.index(elem)
+        except:
+            print('check1')
+            return
+        if bDown:
+            index_next = index+1
+            if index_next >= len(list_child):
+                print('check2')
+                return
+        else:
+            index_next = index-1
+            if index_next < 0:
+                print('check3')
+                return
+                
+        list_child[index], list_child[index_next] \
+            = list_child[index_next], list_child[index]
+            
+        group_tree.tree_widget.rebuildTree(True)
+        
 
 class GridIcon(QVBoxLayout):
     def __init__(self):
@@ -705,15 +741,20 @@ class LinkPopup(QDialog):
             widget = self.grid.itemAt(i).widget()
             if widget is not None: widget.deleteLater()
             
+        # 맨 위 아이템 정보
         item = item_manager.map_item[self.name_item]
         iconSize = 32
         label_item = QLabel()
         label_item.setPixmap(item.getPixmap(iconSize, iconSize))
         self.grid.addWidget(label_item, 0, 0)
         self.grid.addWidget(QLabel(item.getName()), 0, 1)
-        
         row = 1
         
+        # 연결된 링크 정보
+        self.grid.setRowStretch(row, 1)
+        row += 1 
+        self.grid.addWidget(QLabel('Link List'), row, 0, 1, 2)
+        row += 1 
         global edit_widget
         if self.is_result:
             map = edit_widget.elem.map_product
@@ -727,123 +768,18 @@ class LinkPopup(QDialog):
                 list_link = [id_link]
         
         for id_link in list_link:
-            self.addLinkList(row, id_link)
+            self.addLinkList(row, id_link, True)
             row += 1
-        
-        size_button = 32
-        bt_add = QPushButton("+")
-        bt_add.setFixedSize(size_button, size_button)
-        bt_add.clicked.connect(self.onClickAdd)
-        self.grid.addWidget(bt_add, row, 0)
-        row += 1
-        
+            
+        # 연결 가능한 Elem 정보
         self.grid.setRowStretch(row, 1)
-                
-    def addLinkList(self, y, id_elem):
-        elem = elem_manager.map_elem[id_elem]
-        item = elem.item_goal
-        
-        iconSize = 32
-        label_item = QLabel()
-        label_item.setPixmap(item.getPixmap(iconSize, iconSize))
-        
-        label_text = QLabel(elem.name + '\nID:' + str(elem.id))
-        
-        size_button = 20
-        bt_del = QPushButton("-")
-        bt_del.setFixedSize(size_button, size_button)
-        bt_del.clicked.connect(\
-            partial(self.onClickDel, id_elem)\
-        )
-        
-        self.grid.addWidget(label_item, y, 0)
-        self.grid.addWidget(label_text, y, 1)
-        self.grid.addWidget(bt_del, y, 2)
-        
-    def onClickDel(self, id_elem):
-        global edit_widget
-        elem = edit_widget.elem
-        if self.is_result:  # elem이 producer
-            consumer = elem_manager.map_elem[id_elem]
-            consumer.delLink(self.name_item, elem.id)
-        else:               # elem이 consumer
-            producer = elem_manager.map_elem[id_elem]
-            elem.delLink(self.name_item, producer.id)
-        self.drawGrid()
-        edit_widget.setElem(edit_widget.elem, bUpdateItem=True)
-        
-    def onClickAdd(self):
-        global edit_widget
-        dlg = LinkAddPopup(self.name_item, self.is_result)
-        ret = dlg.exec_()
-        if ret == 1:
-            id = dlg.selected
-            if id is None:  # 새로 추가하기
-                item = item_manager.map_item[self.name_item]
-                if self.is_result:  # product Link, 불가능
-                    return
-                else:               # material Link, 호출 elem이 consumer
-                    name_recipe = item.list_madeby[0]
-                    recipe = item_manager.map_recipe[name_recipe]
-                    name_goal = recipe.getListProduct()[0][0]
-                    item_goal = item_manager.map_item[name_goal]
-                elem = elem_manager.ElemFactory(\
-                    None, edit_widget.elem.group, item_goal)
-                elem.changeRecipe(recipe)
-            else:           # 기존 elem
-                elem = elem_manager.map_elem[id]
-            # 연결
-            if self.is_result:
-                elem.addLink(self.name_item, edit_widget.elem.id)
-            else:
-                edit_widget.elem.addLink(self.name_item, elem.id)
-                
-            self.drawGrid()
-            edit_widget.setElem(edit_widget.elem, bUpdateItem=True)
-            if id is None:  # 새로 추가하기
-                group_tree.tree_widget.rebuildTree(keep_sel = True)
-
-# 기존 링크 + 새로 추가할 버튼 보여줌
-class LinkAddPopup(QDialog):
-    def __init__(self, name_item, is_result):
-        super().__init__()
-        self.selected = ''
-        self.name_item = name_item
-        self.is_result = is_result
-        
-        self.initUI()
-        self.drawGrid()
-        
-    def initUI(self):
-        vbox = QVBoxLayout()
-        sa = QScrollArea()
-        sa.setWidgetResizable(True)
-        widgetTop = QWidget()
-        self.grid = QGridLayout()
-        self.grid.setSpacing(0)
-        
-        widgetTop.setLayout(self.grid)
-        sa.setWidget(widgetTop)
-        vbox.addWidget(sa)
-        self.setLayout(vbox)
-        # vbox > sa > widgetTop > self.grid
-        
-        pos = QCursor().pos()
-        width = 200
-        height = 400
-        x = pos.x() - width/2
-        y = max(pos.y() - height/2, 30)
-        
-        self.setWindowTitle('Select Link')
-        self.setGeometry(x, y, width, height)
-        
-    def drawGrid(self):
-        item = item_manager.map_item[self.name_item]
+        row += 1 
+        self.grid.addWidget(QLabel('Not Linked List'), row, 0, 1, 2)
+        row += 1
         group = group_tree.tree_widget.elem_group
         
         # find elem
-        global edit_widget
-        list_elem = []
+        list_not_link = []
         for elem in group.list_child:
             if self.is_result:  map = elem.map_material
             else:               map = elem.map_product
@@ -857,47 +793,91 @@ class LinkAddPopup(QDialog):
                     if edit_widget.elem.id in map[self.name_item][1]:
                         continue
                 
-                list_elem.append(elem)
+                list_not_link.append(elem.id)
         
         # draw elem
-        row = 0
-        for elem in list_elem:
-            self.addLinkNew(row, elem)
+        for id in list_not_link:
+            self.addLinkList(row, id, False)
             row += 1
         
-        # draw add
-        if not self.is_result:  # 재료만 넣자...
-            bt_add = QPushButton("New Factory")
+        # 추가 버튼
+        if not self.is_result:  # product Link, 불가능
+            self.grid.setRowStretch(row, 1)
+            row += 1 
+            bt_add = QPushButton("+")
+            bt_add.setFixedSize(iconSize, iconSize)
             bt_add.clicked.connect(self.onClickAdd)
-            self.grid.addWidget(bt_add, row, 0, 1, 2)
+            self.grid.addWidget(bt_add, row, 0)
             row += 1
         
-        self.grid.setRowStretch(row, 1)
-        
-    def addLinkNew(self, y, elem):
+        self.grid.setRowStretch(row, 10)
+                
+    def addLinkList(self, y, id_elem, bLink):
+        elem = elem_manager.map_elem[id_elem]
         item = elem.item_goal
+        
         iconSize = 32
-        bt_item = QPushButton()
-        bt_item.setFixedSize(iconSize, iconSize)
-        bt_item.setIconSize(QSize(iconSize, iconSize))
-        bt_item.setIcon(item.getIcon())
-        bt_item.id_elem = elem.id
-        bt_item.clicked.connect(\
-            partial(self.onClickSelect, elem.id)\
-        )
+        label_item = QLabel()
+        label_item.setPixmap(item.getPixmap(iconSize, iconSize))
         
-        label_text = QLabel('ID:' + str(elem.id) + '\n' + elem.name)
+        label_text = QLabel(elem.name + '\nID:' + str(elem.id))
         
-        self.grid.addWidget(bt_item, y, 0)
+        size_button = 20
+        if bLink:
+            str_bt = "-"
+            func = self.onClickDel
+        else:
+            str_bt = "+"
+            func = self.onClickSelect
+        bt = QPushButton(str_bt)
+        bt.setFixedSize(size_button, size_button)
+        bt.clicked.connect( partial(func, id_elem) )
+        
+        self.grid.addWidget(label_item, y, 0)
         self.grid.addWidget(label_text, y, 1)
+        self.grid.addWidget(bt, y, 2)
+        
+    def onClickDel(self, id_elem):
+        global edit_widget
+        elem = edit_widget.elem
+        if self.is_result:  # elem이 producer
+            consumer = elem_manager.map_elem[id_elem]
+            consumer.delLink(self.name_item, elem.id)
+        else:               # elem이 consumer
+            producer = elem_manager.map_elem[id_elem]
+            elem.delLink(self.name_item, producer.id)
+        self.drawGrid()
+        edit_widget.setElem(edit_widget.elem, bUpdateItem=True)
         
     def onClickSelect(self, id_elem):
-        bt = self.sender()
-        self.selected = bt.id_elem
-        self.accept()
+        global edit_widget
+        elem = edit_widget.elem
+        if self.is_result:  # elem이 producer
+            consumer = elem_manager.map_elem[id_elem]
+            consumer.addLink(self.name_item, elem.id)
+        else:               # elem이 consumer
+            producer = elem_manager.map_elem[id_elem]
+            elem.addLink(self.name_item, producer.id)
+        self.drawGrid()
+        edit_widget.setElem(edit_widget.elem, bUpdateItem=True)
         
     def onClickAdd(self):
-        self.selected = None
-        self.accept()
+        if self.is_result:  # product Link, 불가능
+            return
+            
+        global edit_widget
+        item = item_manager.map_item[self.name_item]
+        name_recipe = item.list_madeby[0]
+        recipe = item_manager.map_recipe[name_recipe]
+        elem = elem_manager.ElemFactory(\
+            None, edit_widget.elem.group, item)
+        elem.changeRecipe(recipe)
+        
+        # 연결
+        edit_widget.elem.addLink(self.name_item, elem.id)
+        
+        self.drawGrid()
+        edit_widget.setElem(edit_widget.elem, bUpdateItem=True)
+        group_tree.tree_widget.rebuildTree(keep_sel = True)
 
 # --------------------------- debug
