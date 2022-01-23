@@ -156,6 +156,9 @@ class Item(FCITEM):
         global map_item, map_subgroup
         self.name = elem['name']         #name
         self.type = elem['type']         #type
+        self.stack = 0
+        if elem['stack_size'] is not None:
+            self.stack = elem['stack_size']
         #subgroup
         self.subgroup = elem['subgroup'] 
         if self.subgroup is None or self.subgroup == '' :
@@ -209,6 +212,7 @@ class Item(FCITEM):
         map = {}
         map['name'] = self.name
         map['type'] = self.type
+        map['stack_size'] = self.stack
         map['subgroup'] = self.subgroup
         map['flags'] = self.flags
         map['icon'] = self.path_icon
@@ -418,6 +422,7 @@ class Factory(FCITEM):
         self.path_icon = map.get('icon')
         self.flags = None
         self.energy_usage = map.get('energy_usage')
+        self.drain = map.get('drain')
         self.crafting_categories = None
         self.crafting_speed = map.get('crafting_speed')
         self.next_upgrade = map.get('next_upgrade')
@@ -452,6 +457,8 @@ class Factory(FCITEM):
             self.energy_source_type = table.get('type')
             if table.get('emissions_per_minute'):
                 self.energy_source_emissions = table.get('emissions_per_minute')
+            if table.get('drain'):
+                self.drain = table.get('drain')
             
         if self.name is not None:
             map_factory[self.name] = self
@@ -461,11 +468,17 @@ class Factory(FCITEM):
             self.energy_usage = self.energy_usage.replace('k', '000')
             self.energy_usage = self.energy_usage.replace('K', '000')
             self.energy_usage = int(self.energy_usage)
-        
-        self.drain = 0
+            
         # 대기전력 추가
-        if self.energy_source_type == 'electric':
-            self.drain = self.energy_usage / 30
+        if type(self.drain) == str:
+            self.drain = self.drain.replace('W', '')
+            self.drain = self.drain.replace('k', '000')
+            self.drain = self.drain.replace('K', '000')
+            self.drain = int(self.drain)
+        if self.drain is None:
+            self.drain = 0
+            if self.energy_source_type == 'electric':
+                self.drain = self.energy_usage / 30
         
     def __lt__(self, other):
         if self.crafting_speed != other.crafting_speed:
@@ -480,6 +493,7 @@ class Factory(FCITEM):
         map['icon'] = self.path_icon
         map['flags'] = self.flags
         map['energy_usage'] = self.energy_usage
+        map['drain'] = self.drain
         map['crafting_categories'] = self.crafting_categories
         map['crafting_speed'] = self.crafting_speed
         if self.type == 'mining-drill':
