@@ -251,7 +251,7 @@ class OptionWidget(QWidget):
             min_ignore = 0.0001
             self.editIgnore.setText(str(min_ignore))
         
-        #TODO : 팩도리 변경 추가하기...
+        #TODO : 팩토리 변경 추가하기...
         group_tree.tree_widget.rebuildTree(True)
         option_changed = True
         

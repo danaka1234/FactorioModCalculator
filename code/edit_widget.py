@@ -226,13 +226,30 @@ class EditWidget(QWidget):
         
     def update_grid_inout(self):
         for tuple in self.elem.map_material.items():
-            self.map_in[tuple[0]][0].setText(common_func.getAmountPerTime(tuple[1][0]))
+            id_link = tuple[1][1]
+            if id_link == -1:
+                str_link = '\n' + 'No Link'
+            else:
+                str_link = '\n' + 'Link: ' + str(id_link)
+            self.map_in[tuple[0]][0].setText(common_func.getAmountPerTime(tuple[1][0]) + str_link)
             if type(self.elem) == elem_manager.ElemCustom:
                 num = self.elem.recipe_mat[tuple[0]]
                 self.map_in[tuple[0]][1].setText(common_func.getAmountRound(num))
         
         for tuple in self.elem.map_product.items():
-            self.map_out[tuple[0]][0].setText(common_func.getAmountPerTime(tuple[1][0]))
+            list_id = tuple[1][1]
+            if len(list_id) == 0:
+                str_link = '\n' + 'No Link'
+            else:
+                str_link = '\n' + 'Link: '
+                num_max = min(3, len(list_id))
+                for idx in range(num_max):
+                    str_link += str( list_id[idx] ) + ', '
+                str_link = str_link[:-2]
+                if len(list_id) > 3:
+                    str_link += '...'
+                    
+            self.map_out[tuple[0]][0].setText(common_func.getAmountPerTime(tuple[1][0]) + str_link)
             if type(self.elem) == elem_manager.ElemCustom:
                 num = self.elem.recipe_pro[tuple[0]]
                 self.map_out[tuple[0]][1].setText(common_func.getAmountRound(num))
@@ -520,6 +537,8 @@ class GridIcon(QVBoxLayout):
         ret = dlg.exec_()
         if ret == 1:
             item = item_manager.map_item[dlg.selected]
+            if self.elem.item_goal == item:
+                return
             edit_widget.elem.changeItem(item)
             edit_widget.setElem(edit_widget.elem, bUpdateItem=True, bResetInout=True)
         

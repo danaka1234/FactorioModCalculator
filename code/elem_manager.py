@@ -389,7 +389,6 @@ class ElemFactory(Elem):
             or recipe.category not in self.factory.crafting_categories:
             self.changeFactory(None, bUpdate=False)
             
-        #TODO : 처리. 링크 제거?
         self.list_module = []
         if bUpdate:
             self.resetInOut()
@@ -478,6 +477,7 @@ class ElemFactory(Elem):
         self.updateElem(module=True)
         
     def resetInOut(self):
+        self.delLinkAll()
         self.map_product  = {}
         self.map_material = {}
         
@@ -815,9 +815,17 @@ class ElemCustom(Elem):
         self.updateCustom()
     
     def delSubItem(self, isResult, name):
+        global map_elem
         if isResult:
+            list_id = self.map_product[name][1]
+            for id in list_id:
+                elem = map_elem[id]
+                elem.delLink(name, self.id)
             del self.recipe_pro[name]
         else:
+            id = self.map_material[name][1]
+            if id != -1:
+                self.delLink(name, id)
             del self.recipe_mat[name]
             
         self.updateCustom()
@@ -927,6 +935,7 @@ class ElemSpecial(ElemFactory):
         return num_factory != self.num_factory or num_goal != self.num_goal
         
     def resetInOut(self):
+        self.delLinkAll()
         self.map_product  = {}
         self.map_material = {}
         
