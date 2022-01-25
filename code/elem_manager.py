@@ -3,6 +3,7 @@
 import sys, math, os
 import random
 import queue
+import copy
 
 import item_manager, common_func, option_widget, loading_widget
 import json_manager, config_manager, item_manager, log_manager
@@ -212,7 +213,7 @@ class Elem:
         global map_elem
         for tuple in self.map_product.items():
             name_item = tuple[0]
-            list_id = tuple[1][1]
+            list_id = copy.deepcopy(tuple[1][1])
             for id in list_id:
                 elem = map_elem[id]
                 elem.delLink(name_item, self.id)
