@@ -20,6 +20,27 @@ import elem_manager, item_manager, common_func, group_tree, option_widget, commo
 
 edit_widget = None
 
+def get_str_link(isResult, elem, name):
+    if not isResult:
+        id_link = elem.map_material[name][1]
+        if id_link == -1:
+            str_link = '\n' + 'No Link'
+        else:
+            str_link = '\n' + 'Link: ' + str(id_link)
+    else:
+        list_id = elem.map_product[name][1]
+        if len(list_id) == 0:
+            str_link = '\n' + 'No Link'
+        else:
+            str_link = '\n' + 'Link: '
+            num_max = min(3, len(list_id))
+            for idx in range(num_max):
+                str_link += str( list_id[idx] ) + ', '
+            str_link = str_link[:-2]
+            if len(list_id) > 3:
+                str_link += '...'
+    return str_link
+
 class EditWidget(QWidget):
     def __init__(self):
         super().__init__()
@@ -46,7 +67,7 @@ class EditWidget(QWidget):
         self.grid_module = GridModule()
         grid1.addLayout(self.grid_module, 0, 1)
         
-        grid1.setRowStretch(2, 1)
+        grid1.setRowStretch(1, 1)
         grid1.setColumnStretch(2, 1)
         #------------------------- grid_info
         self.grid_icon = GridIcon()
@@ -117,11 +138,35 @@ class EditWidget(QWidget):
         grid_info.setRowStretch(11, 1)
         grid_info.setColumnStretch(2, 1)
         
-        #------------------------- group material product
+        width_group = 200
+        #------------------------- group material
+        hbox1 = QHBoxLayout()
+        scroll_mat = QScrollArea()
+        widget1 = QWidget()
         self.grid_mat = QGridLayout()
+        
+        # group > hbox > scroll > widget > grid
+        group_material.setLayout(hbox1)
+        group_material.setMinimumWidth(width_group)
+        hbox1.addWidget(scroll_mat)
+        scroll_mat.setWidget(widget1)
+        scroll_mat.setWidgetResizable(True)
+        widget1.setLayout(self.grid_mat)
+        
+        #------------------------- group product
+        hbox2 = QHBoxLayout()
+        scroll_pro = QScrollArea()
+        widget2 = QWidget()
         self.grid_pro = QGridLayout()
-        group_material.setLayout(self.grid_mat)
-        group_product .setLayout(self.grid_pro)
+        
+        # group > hbox > scroll > widget > grid
+        group_product.setLayout(hbox2)
+        group_product.setMinimumWidth(width_group)
+        hbox2.addWidget(scroll_pro)
+        scroll_pro.setWidget(widget2)
+        scroll_pro.setWidgetResizable(True)
+        widget2.setLayout(self.grid_pro)
+        
         self.map_in = dict()
         self.map_out = dict()
         
@@ -153,6 +198,7 @@ class EditWidget(QWidget):
             map = self.map_out
             
         # 지우기
+        grid.setRowStretch(grid.rowCount() + 1, 0)
         for i in reversed(range(grid.count())):
             widget = grid.itemAt(i).widget()
             if widget is not None: widget.deleteLater()
@@ -163,13 +209,25 @@ class EditWidget(QWidget):
             item = item_manager.map_item[name_item]
             iconSize = 32
             
+            # 공통
+            bt_link = QPushButton("Link")
+            bt_link.setFixedSize(40, 20)
+            bt_link.clicked.connect(\
+                partial(self.onClickLink, isResult, name_item)\
+            )
+            
             if type(self.elem) != elem_manager.ElemCustom:
                 widget_icon = QLabel()
                 widget_icon.setPixmap(item.getPixmap(iconSize, iconSize))
                 widget_icon.setToolTip(item.getName())
                 
-                widget_num = QLabel('0')
-                map[name_item] = [widget_num]
+                label_num = QLabel('0')
+                map[name_item] = [label_num]
+                
+                grid.addWidget(widget_icon, i, 0)
+                grid.addWidget(label_num, i, 1)
+                grid.addWidget(bt_link, i, 2)
+                
             else:
                 widget_icon = QPushButton()
                 widget_icon.setFixedSize(32, 32)
@@ -178,6 +236,7 @@ class EditWidget(QWidget):
                 widget_icon.clicked.connect(\
                     partial(self.onClickChangeCustom, isResult, name_item)\
                 )
+                widget_icon.setToolTip(item.getName())
                 
                 label_num = QLabel('0')
                 
@@ -189,32 +248,19 @@ class EditWidget(QWidget):
                     partial(self.onEditNumCustom, isResult, name_item)\
                 )
                 
-                vbox = QVBoxLayout()
-                vbox.addWidget(label_num)
-                vbox.addWidget(edit_num)
-                widget_num = QWidget()
-                widget_num.setLayout(vbox)
                 map[name_item] = [label_num, edit_num]
-            
-            grid.addWidget(widget_icon, i, 0)
-            grid.addWidget(widget_num, i, 1)
-            
-            size_button = 20
-            
-            bt_link = QPushButton("L")
-            bt_link.setFixedSize(size_button, size_button)
-            bt_link.clicked.connect(\
-                partial(self.onClickLink, isResult, name_item)\
-            )
-            grid.addWidget(bt_link, i, 2)
-            
-            if type(self.elem) == elem_manager.ElemCustom:
+                
                 bt_del = QPushButton("-")
-                bt_del.setFixedSize(size_button, size_button)
+                bt_del.setFixedSize(20, 20)
                 bt_del.clicked.connect(\
                     partial(self.onClickDelCustom, isResult, name_item)\
                 )
-                grid.addWidget(bt_del, i, 3)
+            
+                grid.addWidget(widget_icon, i * 2, 0, 2, 1)
+                grid.addWidget(label_num, i * 2    , 1)
+                grid.addWidget(edit_num , i * 2 + 1, 1)
+                grid.addWidget(bt_link, i * 2    , 2)
+                grid.addWidget(bt_del , i * 2 + 1, 2)
         
         if type(self.elem) == elem_manager.ElemCustom:
             bt_add = QPushButton("+")
@@ -222,33 +268,20 @@ class EditWidget(QWidget):
             bt_add.clicked.connect(\
                 partial(self.onClickAddCustom, isResult)\
             )
-            grid.addWidget(bt_add, len(list_item), 0)
+            grid.addWidget(bt_add, len(list_item)*2, 1)
+            
+        grid.setRowStretch(grid.rowCount() + 1, 1)
         
     def update_grid_inout(self):
         for tuple in self.elem.map_material.items():
-            id_link = tuple[1][1]
-            if id_link == -1:
-                str_link = '\n' + 'No Link'
-            else:
-                str_link = '\n' + 'Link: ' + str(id_link)
+            str_link = get_str_link(False, self.elem, tuple[0])
             self.map_in[tuple[0]][0].setText(common_func.getAmountPerTime(tuple[1][0]) + str_link)
             if type(self.elem) == elem_manager.ElemCustom:
                 num = self.elem.recipe_mat[tuple[0]]
                 self.map_in[tuple[0]][1].setText(common_func.getAmountRound(num))
         
         for tuple in self.elem.map_product.items():
-            list_id = tuple[1][1]
-            if len(list_id) == 0:
-                str_link = '\n' + 'No Link'
-            else:
-                str_link = '\n' + 'Link: '
-                num_max = min(3, len(list_id))
-                for idx in range(num_max):
-                    str_link += str( list_id[idx] ) + ', '
-                str_link = str_link[:-2]
-                if len(list_id) > 3:
-                    str_link += '...'
-                    
+            str_link = get_str_link(True, self.elem, tuple[0])
             self.map_out[tuple[0]][0].setText(common_func.getAmountPerTime(tuple[1][0]) + str_link)
             if type(self.elem) == elem_manager.ElemCustom:
                 num = self.elem.recipe_pro[tuple[0]]
@@ -430,9 +463,10 @@ class EditWidget(QWidget):
         self.elem.editSubNum(isResult, name, num)
         group_tree.tree_widget.updateItem(self.elem)
         num_factory = self.elem.num_factory
+        str_link = get_str_link(isResult, self.elem, name)
         if isResult:    label_num = self.map_out[name][0]
         else:           label_num = self.map_in [name][0]
-        label_num.setText(common_func.getAmountPerTime(num * num_factory))
+        label_num.setText(common_func.getAmountPerTime(num * num_factory) + str_link)
 
     def onClickUpDouwn(self, bDown):
         elem = self.elem
@@ -440,17 +474,14 @@ class EditWidget(QWidget):
         try:
             index = list_child.index(elem)
         except:
-            print('check1')
             return
         if bDown:
             index_next = index+1
             if index_next >= len(list_child):
-                print('check2')
                 return
         else:
             index_next = index-1
             if index_next < 0:
-                print('check3')
                 return
                 
         list_child[index], list_child[index_next] \
@@ -736,7 +767,6 @@ class LinkPopup(QDialog):
         sa.setWidgetResizable(True)
         widgetTop = QWidget()
         self.grid = QGridLayout()
-        self.grid.setSpacing(0)
         
         widgetTop.setLayout(self.grid)
         sa.setWidget(widgetTop)
@@ -800,6 +830,8 @@ class LinkPopup(QDialog):
         # find elem
         list_not_link = []
         for elem in group.list_child:
+            if elem == edit_widget.elem:
+                continue
             if self.is_result:  map = elem.map_material
             else:               map = elem.map_product
             
@@ -833,11 +865,14 @@ class LinkPopup(QDialog):
                 
     def addLinkList(self, y, id_elem, bLink):
         elem = elem_manager.map_elem[id_elem]
-        item = elem.item_goal
         
-        iconSize = 32
+        if elem.item_goal is not None:
+            pixmap = elem.item_goal.getPixmap()
+        else:
+            pixmap = common_func.getCommonPixmap('factorio')
+            
         label_item = QLabel()
-        label_item.setPixmap(item.getPixmap(iconSize, iconSize))
+        label_item.setPixmap(pixmap)
         
         label_text = QLabel(elem.name + '\nID:' + str(elem.id))
         

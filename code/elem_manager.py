@@ -121,7 +121,7 @@ class Elem:
         delElemId(self.id)
         self.group.updateGroupInOut()
         
-    def changeFacNum(self, num_factory):
+    def changeFacNum(self, num_factory, bUpdate=True):
         self.num_factory = num_factory
     
     # 소비자(consumer)가 호출
@@ -262,7 +262,8 @@ class Elem:
                 tuple[1][0] = num_sum
                 
         if name_max == '' : # 링크가 하나도 없는 경우 그냥 리턴
-            self.updateElem()
+            if type(self) == ElemFactory:
+                self.updateElem()
             return True
                 
         if type(self) == ElemFactory:
@@ -271,7 +272,7 @@ class Elem:
             num_goal = num_fac_max * num_recipe
             self.changeGoal(num_goal, bUpdate)
         else:
-            self.changeFacNum( num_fac_max, bUpdate )
+            self.changeFacNum( num_fac_max, bUpdate=bUpdate )
         return True
         
 class ElemFactory(Elem):
@@ -638,7 +639,7 @@ class ElemGroup(Elem):
         global factories_changed
         factories_changed = True
         
-    def changeFacNum(self, num_factory):
+    def changeFacNum(self, num_factory, bUpdate=True):
         if self.num_factory == num_factory: return
         self.num_factory = num_factory
         self.multiplyNum()
@@ -770,7 +771,7 @@ class ElemCustom(Elem):
         global factories_changed
         factories_changed = True
         
-    def changeFacNum(self, num_factory):
+    def changeFacNum(self, num_factory, bUpdate=True):
         if self.num_factory == num_factory: return
         self.num_factory = num_factory
         self.updateCustom()

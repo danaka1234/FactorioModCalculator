@@ -493,7 +493,6 @@ class Factory(FCITEM):
         map['icon'] = self.path_icon
         map['flags'] = self.flags
         map['energy_usage'] = self.energy_usage
-        map['drain'] = self.drain
         map['crafting_categories'] = self.crafting_categories
         map['crafting_speed'] = self.crafting_speed
         if self.type == 'mining-drill':
@@ -504,6 +503,7 @@ class Factory(FCITEM):
         energy_source = {}
         energy_source['type'] = self.energy_source_type
         energy_source['emissions_per_minute'] = self.energy_source_emissions
+        energy_source['drain'] = self.drain
         map['energy_source'] = energy_source
         return map
         
