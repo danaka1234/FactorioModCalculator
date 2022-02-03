@@ -21,23 +21,20 @@ import elem_manager, item_manager, common_func, group_tree, option_widget, commo
 edit_widget = None
 
 def get_str_link(isResult, elem, name):
-    if not isResult:
-        id_link = elem.map_material[name][1]
-        if id_link == -1:
-            str_link = '\n' + 'No Link'
-        else:
-            str_link = '\n' + 'Link: ' + str(id_link)
+    list_id = elem.getLinkIdList(name, isResult)    
+    if len(list_id) == 0:
+        str_link = '\n' + 'No Link'
     else:
-        list_id = elem.map_product[name][1]
-        if len(list_id) == 0:
-            str_link = '\n' + 'No Link'
+        if not isResult:
+            str_link = '\n' + 'Link: ' + str(list_id[0])
         else:
             str_link = '\n' + 'Link: '
-            num_max = min(3, len(list_id))
+            max_len = 1
+            num_max = min(max_len, len(list_id))
             for idx in range(num_max):
                 str_link += str( list_id[idx] ) + ', '
             str_link = str_link[:-2]
-            if len(list_id) > 3:
+            if len(list_id) > max_len:
                 str_link += '...'
     return str_link
 
@@ -275,14 +272,14 @@ class EditWidget(QWidget):
     def update_grid_inout(self):
         for tuple in self.elem.map_material.items():
             str_link = get_str_link(False, self.elem, tuple[0])
-            self.map_in[tuple[0]][0].setText(common_func.getAmountPerTime(tuple[1][0]) + str_link)
+            self.map_in[tuple[0]][0].setText(common_func.getAmountPerTime(tuple[1]) + str_link)
             if type(self.elem) == elem_manager.ElemCustom:
                 num = self.elem.recipe_mat[tuple[0]]
                 self.map_in[tuple[0]][1].setText(common_func.getAmountRound(num))
         
         for tuple in self.elem.map_product.items():
             str_link = get_str_link(True, self.elem, tuple[0])
-            self.map_out[tuple[0]][0].setText(common_func.getAmountPerTime(tuple[1][0]) + str_link)
+            self.map_out[tuple[0]][0].setText(common_func.getAmountPerTime(tuple[1]) + str_link)
             if type(self.elem) == elem_manager.ElemCustom:
                 num = self.elem.recipe_pro[tuple[0]]
                 self.map_out[tuple[0]][1].setText(common_func.getAmountRound(num))
@@ -301,7 +298,7 @@ class EditWidget(QWidget):
             
         #공용
         self.edit_name.setEnabled(True)
-        if self.elem.haveLink(is_result=True):
+        if self.elem.haveLink(isResult=True):
             self.edit_factories.setEnabled(False)
         else:
             self.edit_factories.setEnabled(True)
@@ -309,7 +306,7 @@ class EditWidget(QWidget):
         
         # Enable > Disable 하면 포커스가 옮겨져서 귀찮다... 각자 설정
         if type(self.elem) in [elem_manager.ElemFactory, elem_manager.ElemSpecial]:
-            if self.elem.haveLink(is_result=True):
+            if self.elem.haveLink(isResult=True):
                 self.edit_goal.setEnabled(False)
             else:
                 self.edit_goal.setEnabled(True)
@@ -430,6 +427,7 @@ class EditWidget(QWidget):
         group_tree.tree_widget.updateItem(self.elem)
         
     def onClickDelete(self):
+        if self.elem is None: return
         self.elem.deleteElem()
         group_tree.tree_widget.rebuildTree()
     
@@ -752,11 +750,11 @@ class GridModule(QGridLayout):
 
 # 현재 링크 상태 보여줌
 class LinkPopup(QDialog):
-    def __init__(self, name_item, is_result):
+    def __init__(self, name_item, isResult):
         super().__init__()
         self.selected = ''
         self.name_item = name_item
-        self.is_result = is_result
+        self.isResult = isResult
         
         self.initUI()
         self.drawGrid()
@@ -780,7 +778,7 @@ class LinkPopup(QDialog):
         x = pos.x() - width/2
         y = max(pos.y() - height/2, 30)
         
-        if self.is_result:  title = 'Link ingredient'
+        if self.isResult:   title = 'Link ingredient'
         else:               title = 'Link result'
         self.setWindowTitle(title)
         self.setGeometry(x, y, width, height)
@@ -805,16 +803,7 @@ class LinkPopup(QDialog):
         self.grid.addWidget(QLabel('Link List'), row, 0, 1, 2)
         row += 1 
         global edit_widget
-        if self.is_result:
-            map = edit_widget.elem.map_product
-            list_link = map[self.name_item][1]
-        else:
-            map = edit_widget.elem.map_material
-            id_link = map[self.name_item][1]
-            if id_link == -1:
-                list_link = []
-            else:
-                list_link = [id_link]
+        list_link = edit_widget.elem.getLinkIdList(self.name_item, self.isResult)
         
         for id_link in list_link:
             self.addLinkList(row, id_link, True)
@@ -832,18 +821,14 @@ class LinkPopup(QDialog):
         for elem in group.list_child:
             if elem == edit_widget.elem:
                 continue
-            if self.is_result:  map = elem.map_material
+            if self.isResult:   map = elem.map_material
             else:               map = elem.map_product
             
             if self.name_item in map.keys():
                 # 이미 연결된거 제외
-                if self.is_result:
-                    if map[self.name_item][1] == edit_widget.elem.id:
-                        continue
-                else:
-                    if edit_widget.elem.id in map[self.name_item][1]:
-                        continue
-                
+                list_link_elem = elem.getLinkIdList(self.name_item, not self.isResult)
+                if edit_widget.elem.id in list_link_elem:
+                    continue
                 list_not_link.append(elem.id)
         
         # draw elem
@@ -852,7 +837,7 @@ class LinkPopup(QDialog):
             row += 1
         
         # 추가 버튼
-        if not self.is_result:  # product Link, 불가능
+        if not self.isResult:  # product Link, 불가능
             self.grid.setRowStretch(row, 1)
             row += 1 
             bt_add = QPushButton("+")
@@ -894,7 +879,7 @@ class LinkPopup(QDialog):
     def onClickDel(self, id_elem):
         global edit_widget
         elem = edit_widget.elem
-        if self.is_result:  # elem이 producer
+        if self.isResult:  # elem이 producer
             consumer = elem_manager.map_elem[id_elem]
             consumer.delLink(self.name_item, elem.id)
         else:               # elem이 consumer
@@ -905,18 +890,20 @@ class LinkPopup(QDialog):
         
     def onClickSelect(self, id_elem):
         global edit_widget
-        elem = edit_widget.elem
-        if self.is_result:  # elem이 producer
+        if self.isResult:   # edit_widget.elem이 producer
+            producer = edit_widget.elem
             consumer = elem_manager.map_elem[id_elem]
-            consumer.addLink(self.name_item, elem.id)
-        else:               # elem이 consumer
+        else:               # edit_widget.elem이 consumer
+            consumer = edit_widget.elem
             producer = elem_manager.map_elem[id_elem]
-            elem.addLink(self.name_item, producer.id)
+        ret = consumer.addLink(self.name_item, producer.id)
+        if not ret:
+            QMessageBox.about(self, 'Link Error', 'error:'+consumer.error)
         self.drawGrid()
         edit_widget.setElem(edit_widget.elem, bUpdateItem=True)
         
     def onClickAdd(self):
-        if self.is_result:  # product Link, 불가능
+        if self.isResult:  # product Link, 불가능
             return
             
         global edit_widget
