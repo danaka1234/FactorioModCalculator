@@ -131,35 +131,37 @@ class GroupTreeWidget(QTreeWidget):
         item_tree.setIcon(0, icon_item)
         return item_tree
         
+    def updateAll(self):
+        item = self.topLevelItem(0)
+        item.update()
+        for idx in range(item.childCount()):
+            item.child(idx).update()
+        
     def addGroup(self):
         elem = elem_manager.ElemGroup(None, self.elem_group)
         ElemTreeItem(self, elem, self.topLevelItem(0))
-        
-        #생성된 아이템 고르기
         self.setCurrentSelect(elem)
-        self.topLevelItem(0).update()
+        self.updateAll()
 
     def addFactory(self):
         item = item_manager.list_item_sorted[0]
         elem = elem_manager.ElemFactory(None, self.elem_group, item)
-        ElemTreeItem(self, elem, self.topLevelItem(0))
-        
-        #생성된 아이템 고르기
+        treeItem = ElemTreeItem(self, elem, self.topLevelItem(0))
         self.setCurrentSelect(elem)
-        self.topLevelItem(0).update()
+        self.updateAll()
         
     def addSpecial(self):
         item = list(item_manager.map_special_factory.values())[0]
         elem = elem_manager.ElemSpecial(None, self.elem_group, item)
         ElemTreeItem(self, elem, self.topLevelItem(0))
         self.setCurrentSelect(elem)
-        self.topLevelItem(0).update()
+        self.updateAll()
 
     def addCustom(self):
         elem = elem_manager.ElemCustom(None, self.elem_group)
         ElemTreeItem(self, elem, self.topLevelItem(0))
         self.setCurrentSelect(elem)
-        self.topLevelItem(0).update()
+        self.updateAll()
         
     def resizeAll(self):
         for idx in range(self.columnCount()):
@@ -188,8 +190,7 @@ class ElemTreeItem(QTreeWidgetItem):
         
         for i in range(0, len(list_key)):
             key = list_key[i]
-            elemSub = map[key]
-            num = elemSub[0]
+            num = map[key]
             item = item_manager.map_item[key]
             
             text = common_func.getAmountPerTime(num)
