@@ -27,8 +27,8 @@ config_default = {
     },
     'display' : {
         'display_monitor':'1'
-        , 'window_width':'800'
-        , 'window_height':'600'
+        , 'window_width':'1280'
+        , 'window_height':'1024'
     }
 }
 
@@ -91,10 +91,6 @@ def init_config():
     
     if len(sys.argv) >= 2:
         config_path = sys.argv[1]
-        if not os.path.exists(config_path):
-            import log_manager
-            log_manager.write_log('Cannot found file \"', config_path, '\"')
-            config_path = config_path_default
     read_config()
     
     path_factorio   = get_config('template','path_factorio')
